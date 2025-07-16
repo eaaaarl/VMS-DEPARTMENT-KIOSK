@@ -3,13 +3,14 @@ import { store as reduxStore } from "@/lib/redux/store";
 import { Stack } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useEffect } from "react";
-import { Provider } from "react-redux";
+import { Provider as ReduxProvider } from "react-redux";
 import { persistStore } from "redux-persist";
 import { PersistGate } from "redux-persist/integration/react";
 
 const persistor = persistStore(reduxStore);
 
 export default function RootLayout() {
+
   useEffect(() => {
     async function setOrientation() {
       await ScreenOrientation.lockAsync(
@@ -24,7 +25,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <Provider store={reduxStore}>
+    <ReduxProvider store={reduxStore}>
       <PersistGate loading={null} persistor={persistor}>
         <Stack
           screenOptions={{
@@ -32,6 +33,6 @@ export default function RootLayout() {
           }}
         />
       </PersistGate>
-    </Provider>
+    </ReduxProvider>
   );
 }

@@ -1,8 +1,20 @@
+import { useAppSelector } from '@/lib/redux/hooks';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import { router } from 'expo-router';
+import React, { useEffect } from 'react';
 import { StatusBar, Text, TouchableOpacity, View } from 'react-native';
 
 export default function Index() {
+  const { ipAddress, port } = useAppSelector((state) => state.config);
+
+  useEffect(() => {
+    if (!ipAddress || ipAddress === '' || !port || port === 0) {
+      console.log('Config not set, redirecting to developer settings');
+      router.replace('/(developer)/DeveloperSetting');
+      return;
+    }
+  }, [ipAddress, port]);
+
   const handleSignIn = () => {
     // Navigate to sign in screen
     console.log('Navigate to Sign In');

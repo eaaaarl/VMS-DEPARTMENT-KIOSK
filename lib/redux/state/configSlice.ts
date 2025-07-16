@@ -14,11 +14,9 @@ export const configSlice = createSlice({
   name: "config",
   initialState,
   reducers: {
-    setIpAddress: (state, action: PayloadAction<string>) => {
-      state.ipAddress = action.payload;
-    },
-    setPort: (state, action: PayloadAction<number>) => {
-      state.port = action.payload;
+    setConfig: (state, action: PayloadAction<ConfigState>) => {
+      state.ipAddress = action.payload.ipAddress;
+      state.port = action.payload.port;
     },
     resetConfig: (state) => {
       state.ipAddress = "";
@@ -27,6 +25,6 @@ export const configSlice = createSlice({
   },
 });
 
-export const { setIpAddress, setPort, resetConfig } = configSlice.actions;
+export const { setConfig, resetConfig } = configSlice.actions;
 
 export const configReducer = configSlice.reducer;
