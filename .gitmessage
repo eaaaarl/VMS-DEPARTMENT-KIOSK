@@ -1,0 +1,29 @@
+#  📝 Commit Message Format: <icon> type(scope): subject
+#
+#  - Use one of these type indicators:
+#    ✨ (feat)     - for new features
+#    🐛 (fix)      - for bug fixes
+#    📚 (docs)     - for documentation changes
+#    🎨 (style)    - for formatting, semicolons, etc. (no code change)
+#    ♻️ (refactor) - for code refactoring (no behavior change)
+#    ⚡ (perf)     - for performance improvements
+#    🧪 (test)     - for adding or modifying tests
+#    🔧 (chore)    - for build/config/utility changes
+#    ⏪ (revert)   - for reverting commits
+#
+#  - Scope is optional (e.g., auth, ui, api, db)
+#  - Subject should be brief (50 chars or less)
+#  - Include a blank line between header and body
+#  - Body explains WHAT and WHY (72 char wrap)
+#  - Footer for issue references (e.g., Fixes #123)
+#
+#  Examples:
+#  ✨ feat(auth): add Google OAuth login
+#  🐛 fix(api): prevent null pointer in user endpoint
+#  📚 docs(readme): update installation instructions
+
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
