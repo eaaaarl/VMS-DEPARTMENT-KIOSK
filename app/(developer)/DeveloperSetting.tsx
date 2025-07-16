@@ -1,8 +1,9 @@
 import ConfigDisplay from '@/feature/developer/ConfigDisplay'
 import { useAppDispatch } from '@/lib/redux/hooks'
-import { setConfig } from '@/lib/redux/state/configSlice'
+import { resetConfig, setConfig } from '@/lib/redux/state/configSlice'
 import React, { useState } from 'react'
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import Toast from 'react-native-toast-message'
 
 export default function DeveloperSetting() {
   const dispatch = useAppDispatch()
@@ -39,6 +40,11 @@ export default function DeveloperSetting() {
 
     try {
       dispatch(setConfig({ ipAddress: ipAddress, port: parseInt(port) }))
+      Toast.show({
+        type: 'success',
+        text1: 'Settings saved',
+        text2: 'Your settings have been saved successfully',
+      })
     } catch (error) {
       console.log(error)
     }
@@ -57,6 +63,12 @@ export default function DeveloperSetting() {
             setIpAddress('')
             setPort('')
             setErrors({})
+            dispatch(resetConfig())
+            Toast.show({
+              type: 'success',
+              text1: 'Settings reset',
+              text2: 'Your settings have been reset successfully',
+            })
           }
         }
       ]
