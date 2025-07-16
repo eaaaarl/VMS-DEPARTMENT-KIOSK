@@ -41,7 +41,7 @@ export default function Index() {
       return;
     }
 
-    console.log('Navigate to Sign Out with department:', selectedDepartment);
+    router.push(`/(visitor)/SignOut?department=${selectedDepartment.id}`);
   };
 
   const handleDepartmentSelect = () => {
