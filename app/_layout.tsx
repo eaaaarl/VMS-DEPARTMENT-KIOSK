@@ -16,8 +16,9 @@ configureReanimatedLogger({
   strict: false,
 });
 
-export default function RootLayout() {
+// Import expo-router's ExpoRoot component which includes NavigationContainer
 
+export default function RootLayout() {
   useEffect(() => {
     async function setOrientation() {
       await ScreenOrientation.lockAsync(

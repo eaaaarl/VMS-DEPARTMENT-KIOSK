@@ -15,7 +15,7 @@ const persistConfig = {
   key: "root",
   storage: AsyncStorage,
   version: 1,
-  blacklist: [...apisReducerPath],
+  blacklist: ["mode", ...apisReducerPath],
 };
 
 AsyncStorage.getAllKeys().then(console.log).catch(console.error);
