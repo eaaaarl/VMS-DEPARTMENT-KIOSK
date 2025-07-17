@@ -1,22 +1,30 @@
+import { useLazyVisitorLogInfoQuery } from '@/feature/visitor/api/visitorApi';
+import { useAppSelector } from '@/lib/redux/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 
 export default function SignIn() {
+  const { LayoutMode } = useAppSelector((state) => state.mode)
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [ticketNumber, setTicketNumber] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showCamera, setShowCamera] = useState(true);
+  const [error, setError] = useState('')
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false)
   const router = useRouter();
-
+  const { officeId } = useLocalSearchParams();
   useEffect(() => {
     if (permission && !permission.granted) {
       requestPermission();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [permission]);
+
 
   const handleBarcodeScanned = ({ type, data }: { type: string, data: string }) => {
     if (!scanned) {
@@ -37,24 +45,29 @@ export default function SignIn() {
     }
   };
 
-  const handleManualSubmit = () => {
+  const [visitorLogInfo, { isLoading: isLoadingVisitorLogInfo }] = useLazyVisitorLogInfoQuery();
+
+  const handleManualSubmit = async () => {
+    console.log('Office Id', officeId)
     if (ticketNumber.trim()) {
-      Alert.alert(
-        'Ticket Number Entered!',
-        `Ticket Number: ${ticketNumber}`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setTicketNumber('');
-              setShowManualEntry(false);
-              console.log('Manual ticket:', ticketNumber);
-            }
-          }
-        ]
-      );
+      try {
+        const { data } = await visitorLogInfo({ strId: ticketNumber })
+        if (data?.results.length === 0) {
+          setError('ID Not in use! Please check your ID');
+        } else if (data?.results?.[0].logOut !== null) {
+          setError('ID Not in use!');
+        } else if (data?.results?.[0].officeId !== Number(officeId)) {
+          setShowManualEntry(false)
+          setShowCamera(false)
+          setShowConfirmationModal(true)
+        } else {
+
+        }
+      } catch (error) {
+        console.log(error)
+      }
     } else {
-      Alert.alert('Error', 'Please enter a valid ticket number');
+      setError('Please enter a valid ticket number');
     }
   };
 
@@ -72,12 +85,12 @@ export default function SignIn() {
         <Text className="text-lg text-gray-800 text-center mb-6">
           Camera permission is required to scan QR codes
         </Text>
-        <TouchableOpacity
+        <Pressable
           onPress={requestPermission}
           className="bg-blue-500 px-6 py-3 rounded-lg"
         >
           <Text className="text-white font-semibold">Grant Permission</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   }
@@ -85,7 +98,7 @@ export default function SignIn() {
   return (
     <View className="flex-1 bg-black">
       {/* CameraView as background */}
-      {showCamera && (
+      {showCamera && !showManualEntry && (
         <View style={{ flex: 1, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
           <CameraView
             style={{ flex: 1 }}
@@ -101,15 +114,20 @@ export default function SignIn() {
       {/* Overlay UI */}
       <View className="absolute top-0 left-0 right-0 z-10 bg-black/50 pt-12 pb-4">
         {/* Back Button */}
-        <TouchableOpacity
-          onPress={() => router.back()}
+        <Pressable
+          onPress={() => {
+            if (LayoutMode === 'User') {
+              router.replace('/(user)/Main')
+            } else {
+              router.replace('/(main)')
+            }
+          }}
           className="absolute left-4 top-10 bg-black/60 h-10 w-10 rounded-full items-center justify-center z-20 shadow"
-          activeOpacity={0.7}
         >
           <Text className="text-white text-2xl -mt-0.5">
             <Ionicons name="arrow-back" size={20} color="white" />
           </Text>
-        </TouchableOpacity>
+        </Pressable>
 
         <Text className="text-white text-xl font-bold text-center">
           Sign In
@@ -135,31 +153,29 @@ export default function SignIn() {
         </View>
       </View>
 
-      {/* Bottom Controls */}
-      <View className="absolute bottom-0 left-0 right-0 bg-black/80 p-6 pb-8">
-        <View className="flex-row justify-center gap-4 mb-4">
-          <TouchableOpacity
+      {/* <View className="absolute bottom-0 left-0 right-0 bg-black/80 p-6 pb-8">
+        <View className="flex-row justify-center gap-4 mb-10">
+          <Pressable
             onPress={() => setShowManualEntry(true)}
             className="bg-gray-700 px-6 py-3 rounded-lg flex-1 mr-2"
           >
             <Text className="text-white text-center font-semibold">
               Manual Entry
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
+          <Pressable
             onPress={() => setScanned(false)}
             className="bg-blue-500 px-6 py-3 rounded-lg flex-1 ml-2"
           >
             <Text className="text-white text-center font-semibold">
               Scan Again
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
-      </View>
+      </View> */}
 
-      {/* Manual Entry Modal */}
-      <Modal
+      {/* <Modal
         visible={showManualEntry}
         transparent={true}
         animationType="slide"
@@ -171,6 +187,10 @@ export default function SignIn() {
               Enter Ticket Number
             </Text>
 
+            {error && (
+              <Text className="text-red-500 text-sm mb-2 text-center">{error}</Text>
+            )}
+
             <TextInput
               className="border border-gray-300 rounded-lg px-4 py-3 mb-4 text-base"
               placeholder="Enter your ticket number"
@@ -180,27 +200,71 @@ export default function SignIn() {
             />
 
             <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={() => setShowManualEntry(false)}
+              <Pressable
+                onPress={() => {
+                  setShowManualEntry(false)
+                  setTicketNumber('')
+                  setError('')
+                }}
                 className="bg-gray-300 px-4 py-3 rounded-lg flex-1"
               >
                 <Text className="text-gray-700 text-center font-semibold">
                   Cancel
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity
+              <Pressable
                 onPress={handleManualSubmit}
                 className="bg-blue-500 px-4 py-3 rounded-lg flex-1"
               >
                 <Text className="text-white text-center font-semibold">
                   Submit
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>
       </Modal>
+
+
+      <Modal
+        visible={showConfirmationModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowConfirmationModal(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className="bg-white m-6 rounded-lg p-6 w-80">
+            <Text className="text-lg font-bold text-gray-800 mb-4 text-center">
+              Visitor
+            </Text>
+            <Text className="text-gray-700 text-md mb-2 text-center">
+              Not in the office premise of this department, Do you want to sign out previous office automatically?
+            </Text>
+            <View className="flex-row gap-3">
+              <Pressable
+                onPress={() => setShowConfirmationModal(false)}
+                className="bg-gray-300 px-4 py-3 rounded-lg flex-1"
+              >
+                <Text className="text-gray-700 text-center font-semibold">
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setShowConfirmationModal(false)
+                  console.log('CONFIRM')
+                }}
+                className="bg-red-500 px-4 py-3 rounded-lg flex-1"
+              >
+                <Text className="text-white text-center font-semibold">
+                  Confirm
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal> */}
     </View>
   );
 }

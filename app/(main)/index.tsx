@@ -8,10 +8,11 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StatusBar, Text, Touch
 
 export default function Index() {
   const { ipAddress, port } = useAppSelector((state) => state.config);
-
+  const { LayoutMode } = useAppSelector((state) => state.mode)
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
   const [tempSelectedDepartment, setTempSelectedDepartment] = useState<Department | null>(null);
+  const { data: departmentData, isLoading: isLoadingDepartment, isError } = useGetAllDepartmentQuery();
 
   useEffect(() => {
     if (!ipAddress || ipAddress === '' || !port || port === 0) {
@@ -19,6 +20,16 @@ export default function Index() {
       router.replace('/(developer)/DeveloperSetting');
       return;
     }
+
+    if (isError) {
+      router.replace('/(developer)/DeveloperSetting')
+      return
+    }
+
+    if (LayoutMode === null) {
+      router.replace('/(mode)/mode')
+    }
+
   }, [ipAddress, port]);
 
   useEffect(() => {
@@ -32,7 +43,7 @@ export default function Index() {
       setShowDepartmentModal(true);
       return;
     }
-    router.push(`/(visitor)/SignIn?department=${selectedDepartment.id}`);
+    router.push(`/(visitor)/SignIn?officeId=${selectedDepartment.officeId}`);
   };
 
   const handleSignOut = () => {
@@ -64,7 +75,7 @@ export default function Index() {
     }
   };
 
-  const { data: departmentData, isLoading: isLoadingDepartment } = useGetAllDepartmentQuery();
+
 
   const DepartmentSelectionModal = () => (
     <Modal
@@ -95,7 +106,7 @@ export default function Index() {
                 <Text className="flex-1 ml-9 text-gray-700 font-semibold text-base">Office Name</Text>
               </View>
               {isLoadingDepartment ? (
-                <View className="flex-1 justify-center items-center">
+                <View className="flex-1 justify-center items-center mt-10">
                   <ActivityIndicator size="large" color="#3B82F6" />
                 </View>
               ) : (
@@ -127,20 +138,19 @@ export default function Index() {
           </ScrollView>
 
           <View className="p-6 py-4 border-t border-gray-200 bg-gray-50">
-            <TouchableOpacity
+            <Pressable
               onPress={handleDepartmentSelect}
               disabled={!tempSelectedDepartment}
               className={`py-4 px-6 rounded-xl ${tempSelectedDepartment
                 ? 'bg-blue-500 shadow-md'
                 : 'bg-gray-300'
                 }`}
-              activeOpacity={0.8}
             >
               <Text className={`text-center font-semibold text-base ${tempSelectedDepartment ? 'text-white' : 'text-gray-500'
                 }`}>
                 Select Department
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </View>
