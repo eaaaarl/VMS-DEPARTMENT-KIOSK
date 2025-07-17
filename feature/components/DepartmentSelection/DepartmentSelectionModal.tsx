@@ -2,7 +2,16 @@ import { Department } from '@/feature/department/api/interface';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { DepartmentSelectionModalProps } from './types';
+
+export interface DepartmentSelectionModalProps {
+  isVisible: boolean;
+  departments?: Department[];
+  isLoading: boolean;
+  selectedDepartment: Department | null;
+  onSelect: (department: Department) => void;
+  onClose: () => void;
+  onConfirm: () => void;
+}
 
 export const DepartmentSelectionModal: React.FC<DepartmentSelectionModalProps> = ({
   isVisible,

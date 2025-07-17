@@ -1,4 +1,4 @@
-import { DepartmentSelectionModal } from '@/feature/components/DepartmentSelection';
+import { DepartmentSelectionModal } from '@/feature/components';
 import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi';
 import { Department } from '@/feature/department/api/interface';
 import { useAppSelector } from '@/lib/redux/hooks';
