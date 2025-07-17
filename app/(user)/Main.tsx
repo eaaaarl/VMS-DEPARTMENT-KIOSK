@@ -1,6 +1,6 @@
 import { Camera, CameraView } from 'expo-camera'
 import React, { useEffect, useState } from 'react'
-import { Alert, SafeAreaView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Alert, Keyboard, KeyboardAvoidingView, Platform, SafeAreaView, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
 
 export default function Main() {
     const [hasPermission, setHasPermission] = useState<boolean | null>(null)
@@ -82,8 +82,7 @@ export default function Main() {
                 Visitor Entry System
             </Text>
 
-            {/* Input Method Toggle */}
-            <View className="flex-row bg-gray-200 rounded-lg p-1 mb-5">
+            <View className="flex-row bg-gray-200 rounded-lg p-2 mb-5 gap-2">
                 <TouchableOpacity
                     onPress={() => setInputMethod('camera')}
                     className={`flex-1 py-3 rounded-lg ${inputMethod === 'camera' ? 'bg-blue-500' : 'bg-transparent'
@@ -106,7 +105,6 @@ export default function Main() {
                 </TouchableOpacity>
             </View>
 
-            {/* Camera View */}
             {inputMethod === 'camera' && (
                 <>
                     <View className="flex-1 rounded-lg overflow-hidden mb-5 relative">
@@ -118,8 +116,6 @@ export default function Main() {
                                 barcodeTypes: ['qr'],
                             }}
                         />
-
-                        {/* QR Code Scanning Overlay */}
                         {cameraEnabled && (
                             <View className="absolute inset-0">
                                 <View className="absolute inset-0 justify-center items-center">
@@ -186,7 +182,6 @@ export default function Main() {
                             </View>
                         )}
 
-                        {/* Camera disabled overlay */}
                         {!cameraEnabled && (
                             <View className="absolute inset-0 bg-black/90 justify-center items-center">
                                 <Text className="text-white text-xl font-bold text-center mb-4">
@@ -199,7 +194,6 @@ export default function Main() {
                         )}
                     </View>
 
-                    {/* Camera Toggle Button */}
                     <View className="flex-row justify-center mt-4">
                         <TouchableOpacity
                             onPress={() => setCameraEnabled(!cameraEnabled)}
@@ -217,39 +211,41 @@ export default function Main() {
                 </>
             )}
 
-            {/* Manual Entry View */}
             {inputMethod === 'manual' && (
-                <View className="flex-1 justify-center px-4">
-                    <View className="bg-white rounded-lg p-6 shadow-lg">
-                        <Text className="text-xl font-bold text-center mb-6 text-gray-800">
-                            Enter Ticket ID
-                        </Text>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View className="flex-1 justify-center px-4">
+                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className='flex-1'>
+                            <View className="bg-white rounded-lg p-6 shadow-lg">
+                                <Text className="text-xl font-bold text-center mb-6 text-gray-800">
+                                    Enter Ticket ID
+                                </Text>
+                                <View className="mb-6">
+                                    <Text className="text-base text-gray-700 mb-2">
+                                        Ticket ID:
+                                    </Text>
+                                    <TextInput
+                                        value={ticketId}
+                                        onChangeText={setTicketId}
+                                        placeholder="Enter visitor ticket ID"
+                                        className="border border-gray-300 rounded-lg px-4 py-3 text-lg"
+                                        autoCapitalize="characters"
+                                        autoCorrect={false}
+                                    />
+                                </View>
 
-                        <View className="mb-6">
-                            <Text className="text-base text-gray-700 mb-2">
-                                Ticket ID:
-                            </Text>
-                            <TextInput
-                                value={ticketId}
-                                onChangeText={setTicketId}
-                                placeholder="Enter visitor ticket ID"
-                                className="border border-gray-300 rounded-lg px-4 py-3 text-lg"
-                                autoCapitalize="characters"
-                                autoCorrect={false}
-                            />
-                        </View>
-
-                        <TouchableOpacity
-                            onPress={handleManualSubmit}
-                            className="bg-blue-500 py-4 rounded-lg"
-                        >
-                            <Text className="text-white text-lg font-bold text-center">
-                                Submit Ticket ID
-                            </Text>
-                        </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={handleManualSubmit}
+                                    className="bg-blue-500 py-4 rounded-lg"
+                                >
+                                    <Text className="text-white text-lg font-bold text-center">
+                                        Submit Ticket ID
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </KeyboardAvoidingView>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             )}
-        </SafeAreaView>
+        </SafeAreaView >
     )
 }

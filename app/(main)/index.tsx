@@ -20,7 +20,6 @@ export default function Index() {
     if (isNavigating) return;
 
     if (!ipAddress || ipAddress === '' || !port || port === 0) {
-      console.log('Config not set, redirecting to developer settings');
       setIsNavigating(true);
       router.replace('/(developer)/DeveloperSetting');
       return;
@@ -52,7 +51,6 @@ export default function Index() {
       setShowDepartmentModal(true);
       return;
     }
-    console.log('🔍 Navigating to SignIn');
     router.push(`/(visitor)/SignIn?officeId=${currentDepartment.officeId}`);
   }, [currentDepartment]);
 
