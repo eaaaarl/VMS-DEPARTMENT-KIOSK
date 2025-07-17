@@ -28,7 +28,11 @@ export default function Main() {
             Alert.alert('Error', 'Please enter a ticket ID')
             return
         }
-        // processTicketData(ticketId.trim())
+        try {
+
+        } catch (error) {
+
+        }
     }
 
     const processTicketData = (data: string) => {
@@ -168,7 +172,7 @@ export default function Main() {
                                             Scan QR Code
                                         </Text>
                                         <Text className="text-white text-base text-center">
-                                            Point the camera at a visitor's QR code to scan
+                                            Point the camera at a visitor&apos;s QR code to scan
                                         </Text>
                                     </View>
 

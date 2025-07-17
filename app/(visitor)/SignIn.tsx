@@ -12,7 +12,6 @@ export default function SignIn() {
   const [scanned, setScanned] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [ticketNumber, setTicketNumber] = useState('');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showCamera, setShowCamera] = useState(true);
   const [error, setError] = useState('')
   const [showConfirmationModal, setShowConfirmationModal] = useState(false)
