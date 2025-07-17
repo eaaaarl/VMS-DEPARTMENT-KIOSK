@@ -118,11 +118,11 @@ export default function SignIn() {
           onPress={() => {
             if (LayoutMode === 'User') {
               router.replace('/(user)/Main')
-            } else {
+            } else if (LayoutMode === 'Kiosk') {
               router.replace('/(main)')
             }
           }}
-          className="absolute left-4 top-10 bg-black/60 h-10 w-10 rounded-full items-center justify-center z-20 shadow"
+          className="mt-5 absolute left-4 top-10 bg-black/60 h-10 w-10 rounded-full items-center justify-center z-20 shadow"
         >
           <Text className="text-white text-2xl -mt-0.5">
             <Ionicons name="arrow-back" size={20} color="white" />
