@@ -1,9 +1,17 @@
+import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi'
+import { Department } from '@/feature/department/api/interface'
+import VisitorInformationModal from '@/feature/user/components/VisitorInformationModal'
+import { VisitorLog } from '@/feature/visitor/api/inteface'
+import { useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery } from '@/feature/visitor/api/visitorApi'
+import { Ionicons } from '@expo/vector-icons'
 import { Camera, CameraView } from 'expo-camera'
 import React, { useEffect, useState } from 'react'
 import {
+    ActivityIndicator,
     Alert,
     Keyboard,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -13,6 +21,7 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native'
+import Toast from 'react-native-toast-message'
 
 export default function Main() {
     const [hasPermission, setHasPermission] = useState<boolean | null>(null)
@@ -20,28 +29,79 @@ export default function Main() {
     const [cameraEnabled, setCameraEnabled] = useState(true)
     const [inputMethod, setInputMethod] = useState<'camera' | 'manual'>('camera')
     const [ticketId, setTicketId] = useState('')
+    const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
+    const [showDepartmentModal, setShowDepartmentModal] = useState(false)
+    const [showVisitorInformationCheckingModal, setShowVisitorInformationCheckingModal] = useState(false)
+    const [currentVisitorLog, setCurrentVisitorLog] = useState<VisitorLog | null>(null)
+    const [purpose, setPurpose] = useState('')
+    const [currentImage, setCurrentImage] = useState('')
+
+    const { data: departmentData, isLoading: isLoadingDepartmentData } = useGetAllDepartmentQuery()
+    const [visitorLogInfo, { isLoading: isLoadingVisitorLogInfo }] = useLazyVisitorLogInfoQuery();
+    const [visitorLogInDetailInfo, { isLoading: isLoadingVisitorLogInDetailInfo }] = useLazyVisitorLogInDetailInfoQuery();
 
     useEffect(() => {
         const getCameraPermissions = async () => {
             const { status } = await Camera.requestCameraPermissionsAsync()
             setHasPermission(status === 'granted')
+            return;
         }
+
+        const checkingDepartment = async () => {
+            if (!selectedDepartment) {
+                setShowDepartmentModal(true)
+                return;
+            }
+        }
+
         getCameraPermissions()
-    }, [])
+        checkingDepartment()
+    }, [selectedDepartment])
+
+    const handleChangePurpose = (purpose: string) => {
+        setPurpose(purpose)
+    }
+
+    const handleSubmitVisitorLog = () => {
+        try {
+
+        } catch (error) {
+
+        }
+    }
 
     const handleBarCodeScanned = ({ data }: { data: string }) => {
         setScanned(true)
         processTicketData(data)
     }
 
-    const handleManualSubmit = () => {
+    const handleManualSubmit = async () => {
         if (ticketId.trim() === '') {
             Alert.alert('Error', 'Please enter a ticket ID')
             return
         }
         try {
-            processTicketData(ticketId.trim())
+            const visitorLogInfoData = await visitorLogInfo({ strId: ticketId }).unwrap()
+            const visitorLogInDetailData = await visitorLogInDetailInfo({ strId: ticketId }).unwrap()
+
+            if (visitorLogInfoData?.results.length === 0) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'ID Not in use!',
+                    text2: 'Please check the ticket id'
+                })
+            } else if (visitorLogInfoData?.results?.[0].logOut !== null) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'ID Already Logged Out!',
+                })
+            } else if (visitorLogInfoData?.results?.[0].officeId === Number(selectedDepartment?.officeId) && visitorLogInDetailData?.results?.length === 0) {
+                setShowVisitorInformationCheckingModal(true)
+                setCurrentVisitorLog(visitorLogInfoData?.results?.[0])
+                setCurrentImage(visitorLogInfoData?.results?.[0]?.strLogIn.replace(' ', '_').replace(':', '-').replace(':', '-') + '.png')
+            }
         } catch (error) {
+            console.log(error)
             Alert.alert('Error', 'Failed to process ticket')
         }
     }
@@ -93,7 +153,7 @@ export default function Main() {
                 <Text className="text-2xl font-bold text-center mb-5 text-gray-800">
                     Visitor Entry System
                 </Text>
-                <View className="flex-row bg-gray-200 rounded-lg p-2 mb-5 gap-2">
+                <View className="flex-row bg-grcay-200 rounded-lg p-2 mb-5 gap-2">
                     <TouchableOpacity
                         onPress={() => setInputMethod('camera')}
                         className={`flex-1 py-3 rounded-lg ${inputMethod === 'camera' ? 'bg-blue-500' : 'bg-transparent'
@@ -179,7 +239,7 @@ export default function Main() {
                                         Scan QR Code
                                     </Text>
                                     <Text className="text-white text-base text-center">
-                                        Point the camera at a visitor's QR code to scan
+                                        Point the camera at a visitor&apos;s QR code to scan
                                     </Text>
                                 </View>
 
@@ -233,11 +293,9 @@ export default function Main() {
                             <View className="flex-1 px-4 justify-center">
                                 <View className="bg-white rounded-lg p-6 shadow-lg">
                                     <Text className="text-xl font-bold text-center mb-6 text-gray-800">
-                                        Enter Ticket ID (Very Low - Fixed)
+                                        Enter Ticket ID
                                     </Text>
-                                    <Text className="text-base text-gray-700 mb-4">
-                                        Ticket ID:
-                                    </Text>
+
                                     <TextInput
                                         value={ticketId}
                                         onChangeText={setTicketId}
@@ -247,7 +305,7 @@ export default function Main() {
                                         autoCorrect={false}
                                         returnKeyType="done"
                                         onSubmitEditing={handleManualSubmit}
-                                        blurOnSubmit={true}
+                                        placeholderTextColor={'gray'}
                                     />
                                     <TouchableOpacity
                                         onPress={handleManualSubmit}
@@ -264,6 +322,96 @@ export default function Main() {
                 </KeyboardAvoidingView>
             )
             }
+
+            <Modal
+                visible={showDepartmentModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowDepartmentModal(false)}
+            >
+                <View className="flex-1 bg-black/30 justify-center items-center px-4">
+                    <View style={{ height: 500 }} className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <View className="bg-blue-500 px-6 py-4 flex-row justify-between items-center">
+                            <Text className="text-white text-xl font-bold">SELECT DEPARTMENT</Text>
+                            <TouchableOpacity
+                                onPress={() => setShowDepartmentModal(false)}
+                                className="p-2 rounded-full bg-white/20"
+                            >
+                                <Ionicons name="close" size={24} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                        <View className="flex-row px-6 py-4 border-b border-gray-200">
+                            <Text className="flex-1 text-center text-gray-700 font-semibold text-base">Department Name</Text>
+                            <Text className="flex-1 text-center text-gray-700 font-semibold text-base">Office Name</Text>
+                            <Text className="w-16 text-center text-gray-700 font-semibold text-base">Select</Text>
+                        </View>
+                        <ScrollView className="flex-1 px-6 py-4">
+                            <View className="gap-2">
+                                {isLoadingDepartmentData && (
+                                    <View className="flex-1 justify-center items-center">
+                                        <ActivityIndicator size="large" color="#0000ff" />
+                                    </View>
+                                )}
+                                {departmentData?.results?.map((dept) => (
+                                    <TouchableOpacity
+                                        key={dept.id}
+                                        onPress={() => {
+                                            setSelectedDepartment(dept)
+                                        }}
+                                        activeOpacity={0.2}
+                                    >
+                                        <View className={`flex-row items-center py-4 px-3 rounded-lg ${selectedDepartment?.id === dept.id ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'
+                                            }`}>
+                                            <Text className="flex-1 text-gray-800 text-base font-medium">{dept.name}</Text>
+                                            <Text className="flex-1 text-center text-gray-700 text-base font-medium">{dept.officeName}</Text>
+
+                                            {/* Radio Button Indicator */}
+                                            <View className="w-16 items-center justify-center">
+                                                <View className={`w-6 h-6 rounded-full border-2 items-center justify-center ${selectedDepartment?.id === dept.id
+                                                    ? 'border-blue-500 bg-blue-500'
+                                                    : 'border-gray-300 bg-white'
+                                                    }`}>
+                                                    {selectedDepartment?.id === dept.id && (
+                                                        <View className="w-2 h-2 rounded-full bg-white" />
+                                                    )}
+                                                </View>
+                                            </View>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </ScrollView>
+                        <View className="p-6 py-4 border-t border-gray-200 bg-gray-50">
+                            <TouchableOpacity
+                                onPress={() => {
+                                    if (selectedDepartment) {
+                                        setShowDepartmentModal(false);
+                                    }
+                                }}
+                                disabled={!selectedDepartment}
+                                className={`py-4 px-6 rounded-xl ${selectedDepartment
+                                    ? 'bg-blue-500'
+                                    : 'bg-gray-300'
+                                    }`}
+                            >
+                                <Text className={`text-center font-semibold text-base ${selectedDepartment ? 'text-white' : 'text-gray-500'
+                                    }`}>
+                                    Select Department
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            <VisitorInformationModal
+                visible={showVisitorInformationCheckingModal}
+                onClose={() => setShowVisitorInformationCheckingModal(false)}
+                currentVisitorLog={currentVisitorLog}
+                purpose={purpose}
+                handleChangePurpose={handleChangePurpose}
+                onSubmitVisitorLog={handleSubmitVisitorLog}
+            />
         </SafeAreaView >
     )
 }

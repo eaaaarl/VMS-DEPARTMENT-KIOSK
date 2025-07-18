@@ -49,7 +49,7 @@ export const visitorApi = createApi({
     >({
       query: ({ strId }) => {
         return {
-          url: `/visitors-log/public?DATE(visit_log_detail.logIn)='${formattedDate(new Date())}'&visit_log_detail.strId='${strId}'&limit=1&order=login DESC`,
+          url: `/visitors-log-detail/public?DATE(visit_log_detail.logIn)='${formattedDate(new Date())}'&visit_log_detail.strId='${strId}'&limit=1&order=login DESC`,
           method: "GET",
         };
       },
