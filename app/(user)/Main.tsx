@@ -1,8 +1,9 @@
 import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi'
 import { Department } from '@/feature/department/api/interface'
+import SignOutModal from '@/feature/user/components/SignOutModal'
 import VisitorInformationModal from '@/feature/user/components/VisitorInformationModal'
-import { ICreateVisitorLogDetailPayload, VisitorLog } from '@/feature/visitor/api/inteface'
-import { useCreateVisitorLogDetailMutation, useLazyVisitorImageQuery, useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery } from '@/feature/visitor/api/visitorApi'
+import { ICreateVisitorLogDetailPayload, VisitorLog, VisitorLogDetail } from '@/feature/visitor/api/inteface'
+import { useCreateVisitorLogDetailMutation, useLazyVisitorImageQuery, useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery, useUpdateVisitorsLogDetailMutation } from '@/feature/visitor/api/visitorApi'
 import { formattedDateWithTime } from '@/feature/visitor/utils/formattedDate'
 import { Ionicons } from '@expo/vector-icons'
 import { Camera, CameraView } from 'expo-camera'
@@ -34,9 +35,14 @@ export default function Main() {
     const [showDepartmentModal, setShowDepartmentModal] = useState(false)
     const [showVisitorInformationCheckingModal, setShowVisitorInformationCheckingModal] = useState(false)
     const [currentVisitorLog, setCurrentVisitorLog] = useState<VisitorLog | null>(null)
+
+    const [currentVisitorLogInDetailSignOut, setCurrentVisitorLogInDetailSignOut] = useState<VisitorLogDetail | null>(null)
+    const [currentVisitorLogSignOut, setCurrentVisitorLogSignOut] = useState<VisitorLog | null>(null)
+
     const [purpose, setPurpose] = useState('')
     const [idVisitorImage, setIdVisitorImage] = useState<string | null>(null)
     const [photoVisitorImage, setPhotoVisitorImage] = useState<string | null>(null)
+    const [showSignOutModal, setShowSignOutModal] = useState(false)
 
     const { data: departmentData, isLoading: isLoadingDepartmentData } = useGetAllDepartmentQuery()
     const [visitorLogInfo] = useLazyVisitorLogInfoQuery();
@@ -73,6 +79,7 @@ export default function Main() {
     }
 
     const [createVisitorLogDetail, { isLoading: isLoadingCreateVisitorLogDetail }] = useCreateVisitorLogDetailMutation();
+    const [updateVisitorsLogDetail, { isLoading: isLoadingUpdateVisitorsLogDetail }] = useUpdateVisitorsLogDetailMutation();
 
     const handleSubmitVisitorLog = async () => {
         if (purpose.trim() === '') {
@@ -108,6 +115,81 @@ export default function Main() {
             setTicketId('')
         } catch (error) {
             console.log(error)
+        }
+    }
+
+
+    const handleSignOut = async () => {
+        console.log(currentVisitorLogInDetailSignOut?.strId, currentVisitorLogInDetailSignOut?.strDeptLogIn)
+
+        // Check if visitor data exists
+        /*   if (!currentVisitorLogInDetail?.strId || !currentVisitorLogInDetail?.strDeptLogIn) {
+              Toast.show({
+                  type: 'error',
+                  text1: 'No visitor log in detail found!',
+                  text2: 'Please check the ticket id',
+                  position: 'bottom', // Changed to bottom for better visibility over modal
+                  bottomOffset: 100,
+                  visibilityTime: 4000,
+              })
+              return
+          } */
+
+        try {
+            const dateTimeDeptLogin = currentVisitorLogInDetailSignOut?.strDeptLogIn!
+            const visitorStrId = currentVisitorLogInDetailSignOut?.strId
+
+
+            const response = await updateVisitorsLogDetail({
+                id: visitorStrId as string,
+                dateTime: dateTimeDeptLogin || '',
+                deptLogOut: formattedDateWithTime(new Date()),
+                userDeptLogOutId: null,
+            }).unwrap()
+
+            console.log(response)
+            // Handle specific error case
+            if (response.ghError === 2001) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Visitor Already Logged Out!',
+                    position: 'bottom',
+                    bottomOffset: 100,
+                    visibilityTime: 4000,
+                })
+                setShowSignOutModal(false)
+                setTicketId('')
+                return;
+            }
+
+            // Success case
+            Toast.show({
+                type: 'success',
+                text1: response.ghMessage.toUpperCase(),
+                position: 'bottom',
+                bottomOffset: 100,
+                visibilityTime: 3000,
+            })
+
+            // Close modal and reset state
+            setShowSignOutModal(false)
+            setTicketId('')
+
+        } catch (error) {
+            console.log('Sign out error:', error)
+
+            // Handle network/API errors
+            Toast.show({
+                type: 'error',
+                text1: 'Sign Out Failed',
+                text2: 'Please try again or check your connection',
+                position: 'bottom',
+                bottomOffset: 100,
+                visibilityTime: 4000,
+            })
+
+            // Optionally keep modal open on error for retry
+            // setShowSignOutModal(false)
         }
     }
 
@@ -148,12 +230,18 @@ export default function Main() {
                     setIdVisitorImage(null)
                     setPhotoVisitorImage(null)
                 }
+            } else {
+                setShowSignOutModal(true)
+                setCurrentVisitorLogInDetailSignOut(visitorLogInDetailData?.results?.[0])
+                setCurrentVisitorLogSignOut(visitorLogInfoData?.results?.[0])
             }
         } catch (error) {
             console.log(error)
             Alert.alert('Error', 'Failed to process ticket')
         }
     }
+
+
 
     const processTicketData = (data: string) => {
         Alert.alert(
@@ -465,6 +553,13 @@ export default function Main() {
                 idVisitorImage={idVisitorImage}
                 photoVisitorImage={photoVisitorImage}
                 isLoading={isLoadingCreateVisitorLogDetail}
+            />
+
+            <SignOutModal
+                visible={showSignOutModal}
+                onClose={() => setShowSignOutModal(false)}
+                onConfirm={handleSignOut}
+                ticketId={ticketId}
             />
 
         </SafeAreaView >

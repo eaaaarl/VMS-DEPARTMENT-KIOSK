@@ -98,6 +98,28 @@ export const visitorApi = createApi({
         "VisitorImage",
       ],
     }),
+
+    updateVisitorsLogDetail: builder.mutation<
+      { ghError: number; ghMessage: string },
+      {
+        id: string;
+        dateTime: string;
+        deptLogOut: string;
+        userDeptLogOutId: number | null;
+      }
+    >({
+      query: ({ id, dateTime, deptLogOut, userDeptLogOutId }) => {
+        return {
+          url: `/visitors-log-detail/public/visit-log-detail/${id}/${dateTime}`,
+          method: "PUT",
+          body: {
+            deptLogOut,
+            userDeptLogOutId,
+          },
+        };
+      },
+      invalidatesTags: ["VisitorLogInfo", "VisitorLogInDetailInfo"],
+    }),
   }),
 });
 
@@ -109,4 +131,5 @@ export const {
   useVisitorImageQuery,
   useLazyVisitorImageQuery,
   useCreateVisitorLogDetailMutation,
+  useUpdateVisitorsLogDetailMutation,
 } = visitorApi;

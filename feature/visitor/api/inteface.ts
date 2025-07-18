@@ -82,3 +82,8 @@ export interface ICreateVisitorLogDetailPayload {
     };
   };
 }
+
+export interface ICreateVisitorLogOutPayload {
+  deptLogOut: string;
+  userDeptLogOutId: number | null;
+}
