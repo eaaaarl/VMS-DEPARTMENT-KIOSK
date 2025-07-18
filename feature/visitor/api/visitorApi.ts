@@ -2,6 +2,7 @@ import { RootState } from "@/lib/redux/store";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { formattedDate } from "../utils/formattedDate";
 import {
+  ICreateVisitorLogDetailPayload,
   IVisitorImageResponse,
   IVisitorLogDetailResponse,
   IVisitorLogInfoResponse,
@@ -39,12 +40,19 @@ export const visitorApi = createApi({
     });
     return baseQuery(adjustedArgs, api, extraOptions);
   },
+  tagTypes: [
+    "VisitorLogInfo",
+    "VisitorLogInDetailInfo",
+    "VisitorImage",
+    "VisitorLogDetail",
+  ],
   endpoints: (builder) => ({
     visitorLogInfo: builder.query<IVisitorLogInfoResponse, { strId: string }>({
       query: ({ strId }) => ({
         url: `/visitors-log/public?DATE(logIn)='${formattedDate(new Date())}'&strId='${strId}'&limit=1&order=login DESC`,
         method: "GET",
       }),
+      providesTags: ["VisitorLogInfo"],
     }),
 
     visitorLogInDetailInfo: builder.query<
@@ -57,6 +65,7 @@ export const visitorApi = createApi({
           method: "GET",
         };
       },
+      providesTags: ["VisitorLogInDetailInfo"],
     }),
 
     visitorImage: builder.query<IVisitorImageResponse, { fileName: string }>({
@@ -66,6 +75,28 @@ export const visitorApi = createApi({
           method: "GET",
         };
       },
+      providesTags: ["VisitorImage"],
+    }),
+
+    createVisitorLogDetail: builder.mutation<
+      {
+        ghError: number;
+        ghMessage: string;
+      },
+      ICreateVisitorLogDetailPayload
+    >({
+      query: ({ payload }) => {
+        return {
+          url: `/visitors-log-detail/public`,
+          method: "POST",
+          body: payload,
+        };
+      },
+      invalidatesTags: [
+        "VisitorLogInfo",
+        "VisitorLogInDetailInfo",
+        "VisitorImage",
+      ],
     }),
   }),
 });
@@ -77,4 +108,5 @@ export const {
   useLazyVisitorLogInDetailInfoQuery,
   useVisitorImageQuery,
   useLazyVisitorImageQuery,
+  useCreateVisitorLogDetailMutation,
 } = visitorApi;

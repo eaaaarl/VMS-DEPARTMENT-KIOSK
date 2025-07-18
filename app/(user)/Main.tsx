@@ -1,8 +1,9 @@
 import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi'
 import { Department } from '@/feature/department/api/interface'
 import VisitorInformationModal from '@/feature/user/components/VisitorInformationModal'
-import { VisitorLog } from '@/feature/visitor/api/inteface'
-import { useLazyVisitorImageQuery, useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery } from '@/feature/visitor/api/visitorApi'
+import { ICreateVisitorLogDetailPayload, VisitorLog } from '@/feature/visitor/api/inteface'
+import { useCreateVisitorLogDetailMutation, useLazyVisitorImageQuery, useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery } from '@/feature/visitor/api/visitorApi'
+import { formattedDateWithTime } from '@/feature/visitor/utils/formattedDate'
 import { Ionicons } from '@expo/vector-icons'
 import { Camera, CameraView } from 'expo-camera'
 import React, { useEffect, useState } from 'react'
@@ -38,9 +39,9 @@ export default function Main() {
     const [photoVisitorImage, setPhotoVisitorImage] = useState<string | null>(null)
 
     const { data: departmentData, isLoading: isLoadingDepartmentData } = useGetAllDepartmentQuery()
-    const [visitorLogInfo, { isLoading: isLoadingVisitorLogInfo }] = useLazyVisitorLogInfoQuery();
-    const [visitorLogInDetailInfo, { isLoading: isLoadingVisitorLogInDetailInfo }] = useLazyVisitorLogInDetailInfoQuery();
-    const [visitorImage, { isLoading: isLoadingVisitorImage }] = useLazyVisitorImageQuery();
+    const [visitorLogInfo] = useLazyVisitorLogInfoQuery();
+    const [visitorLogInDetailInfo] = useLazyVisitorLogInDetailInfoQuery();
+    const [visitorImage] = useLazyVisitorImageQuery();
 
     useEffect(() => {
         const getCameraPermissions = async () => {
@@ -64,11 +65,49 @@ export default function Main() {
         setPurpose(purpose)
     }
 
-    const handleSubmitVisitorLog = () => {
+    const handleCloseVisitorInformationCheckingModal = () => {
+        setShowVisitorInformationCheckingModal(false)
+        setCurrentVisitorLog(null)
+        setIdVisitorImage(null)
+        setPhotoVisitorImage(null)
+    }
+
+    const [createVisitorLogDetail, { isLoading: isLoadingCreateVisitorLogDetail }] = useCreateVisitorLogDetailMutation();
+
+    const handleSubmitVisitorLog = async () => {
+        if (purpose.trim() === '') {
+            Toast.show({
+                type: 'error',
+                text1: 'Please enter a purpose of the visit!',
+            })
+            return
+        }
+
         try {
-
+            const payload: ICreateVisitorLogDetailPayload = {
+                payload: {
+                    log: {
+                        id: currentVisitorLog?.id as number,
+                        strId: currentVisitorLog?.strId as string,
+                        logIn: formattedDateWithTime(new Date(currentVisitorLog?.logIn || '')),
+                        deptLogIn: formattedDateWithTime(new Date()),
+                        visitorId: currentVisitorLog?.visitorId as number,
+                        deptId: selectedDepartment?.id as number,
+                        reason: purpose,
+                        // null for no user
+                        userDeptLogInId: null
+                    }
+                }
+            }
+            const response = await createVisitorLogDetail(payload).unwrap()
+            Toast.show({
+                type: 'success',
+                text1: response.ghMessage.toUpperCase(),
+            })
+            handleCloseVisitorInformationCheckingModal()
+            setTicketId('')
         } catch (error) {
-
+            console.log(error)
         }
     }
 
@@ -418,14 +457,16 @@ export default function Main() {
 
             <VisitorInformationModal
                 visible={showVisitorInformationCheckingModal}
-                onClose={() => setShowVisitorInformationCheckingModal(false)}
+                onClose={handleCloseVisitorInformationCheckingModal}
                 currentVisitorLog={currentVisitorLog}
                 purpose={purpose}
                 handleChangePurpose={handleChangePurpose}
                 onSubmitVisitorLog={handleSubmitVisitorLog}
                 idVisitorImage={idVisitorImage}
                 photoVisitorImage={photoVisitorImage}
+                isLoading={isLoadingCreateVisitorLogDetail}
             />
+
         </SafeAreaView >
     )
 }

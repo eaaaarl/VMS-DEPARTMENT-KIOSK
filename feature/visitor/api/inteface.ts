@@ -67,3 +67,18 @@ export interface IVisitorImageResponse {
   idExist: boolean;
   photoExist: boolean;
 }
+
+export interface ICreateVisitorLogDetailPayload {
+  payload: {
+    log: {
+      id: number;
+      strId: string;
+      logIn: string;
+      deptLogIn: string;
+      visitorId: number;
+      deptId: number;
+      reason: string;
+      userDeptLogInId: number | null;
+    };
+  };
+}
