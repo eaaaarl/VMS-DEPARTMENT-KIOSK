@@ -1,9 +1,19 @@
+import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi'
+import { Department } from '@/feature/department/api/interface'
+import SignOutModal from '@/feature/user/components/SignOutModal'
+import VisitorInformationModal from '@/feature/user/components/VisitorInformationModal'
+import { ICreateVisitorLogDetailPayload, VisitorLog, VisitorLogDetail } from '@/feature/visitor/api/inteface'
+import { useCreateVisitorLogDetailMutation, useLazyVisitorImageQuery, useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery, useUpdateVisitorsLogDetailMutation } from '@/feature/visitor/api/visitorApi'
+import { formattedDateWithTime } from '@/feature/visitor/utils/formattedDate'
+import { Ionicons } from '@expo/vector-icons'
 import { Camera, CameraView } from 'expo-camera'
 import React, { useEffect, useState } from 'react'
 import {
+    ActivityIndicator,
     Alert,
     Keyboard,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -13,6 +23,7 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native'
+import Toast from 'react-native-toast-message'
 
 export default function Main() {
     const [hasPermission, setHasPermission] = useState<boolean | null>(null)
@@ -20,31 +31,217 @@ export default function Main() {
     const [cameraEnabled, setCameraEnabled] = useState(true)
     const [inputMethod, setInputMethod] = useState<'camera' | 'manual'>('camera')
     const [ticketId, setTicketId] = useState('')
+    const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
+    const [showDepartmentModal, setShowDepartmentModal] = useState(false)
+    const [showVisitorInformationCheckingModal, setShowVisitorInformationCheckingModal] = useState(false)
+    const [currentVisitorLog, setCurrentVisitorLog] = useState<VisitorLog | null>(null)
+
+    const [currentVisitorLogInDetailSignOut, setCurrentVisitorLogInDetailSignOut] = useState<VisitorLogDetail | null>(null)
+    const [currentVisitorLogSignOut, setCurrentVisitorLogSignOut] = useState<VisitorLog | null>(null)
+
+    const [purpose, setPurpose] = useState('')
+    const [idVisitorImage, setIdVisitorImage] = useState<string | null>(null)
+    const [photoVisitorImage, setPhotoVisitorImage] = useState<string | null>(null)
+    const [showSignOutModal, setShowSignOutModal] = useState(false)
+
+    const { data: departmentData, isLoading: isLoadingDepartmentData } = useGetAllDepartmentQuery()
+    const [visitorLogInfo] = useLazyVisitorLogInfoQuery();
+    const [visitorLogInDetailInfo] = useLazyVisitorLogInDetailInfoQuery();
+    const [visitorImage] = useLazyVisitorImageQuery();
 
     useEffect(() => {
         const getCameraPermissions = async () => {
             const { status } = await Camera.requestCameraPermissionsAsync()
             setHasPermission(status === 'granted')
+            return;
         }
+
+        const checkingDepartment = async () => {
+            if (!selectedDepartment) {
+                setShowDepartmentModal(true)
+                return;
+            }
+        }
+
         getCameraPermissions()
-    }, [])
+        checkingDepartment()
+    }, [selectedDepartment])
+
+    const handleChangePurpose = (purpose: string) => {
+        setPurpose(purpose)
+    }
+
+    const handleCloseVisitorInformationCheckingModal = () => {
+        setShowVisitorInformationCheckingModal(false)
+        setCurrentVisitorLog(null)
+        setIdVisitorImage(null)
+        setPhotoVisitorImage(null)
+    }
+
+    const [createVisitorLogDetail, { isLoading: isLoadingCreateVisitorLogDetail }] = useCreateVisitorLogDetailMutation();
+    const [updateVisitorsLogDetail, { isLoading: isLoadingUpdateVisitorsLogDetail }] = useUpdateVisitorsLogDetailMutation();
+
+    const handleSubmitVisitorLog = async () => {
+        if (purpose.trim() === '') {
+            Toast.show({
+                type: 'error',
+                text1: 'Please enter a purpose of the visit!',
+            })
+            return
+        }
+
+        try {
+            const payload: ICreateVisitorLogDetailPayload = {
+                payload: {
+                    log: {
+                        id: currentVisitorLog?.id as number,
+                        strId: currentVisitorLog?.strId as string,
+                        logIn: formattedDateWithTime(new Date(currentVisitorLog?.logIn || '')),
+                        deptLogIn: formattedDateWithTime(new Date()),
+                        visitorId: currentVisitorLog?.visitorId as number,
+                        deptId: selectedDepartment?.id as number,
+                        reason: purpose,
+                        // null for no user
+                        userDeptLogInId: null
+                    }
+                }
+            }
+            const response = await createVisitorLogDetail(payload).unwrap()
+            Toast.show({
+                type: 'success',
+                text1: response.ghMessage.toUpperCase(),
+            })
+            handleCloseVisitorInformationCheckingModal()
+            setTicketId('')
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+
+    const handleSignOut = async () => {
+        console.log(currentVisitorLogInDetailSignOut?.strId, currentVisitorLogInDetailSignOut?.strDeptLogIn)
+
+        // Check if visitor data exists
+        /*   if (!currentVisitorLogInDetail?.strId || !currentVisitorLogInDetail?.strDeptLogIn) {
+              Toast.show({
+                  type: 'error',
+                  text1: 'No visitor log in detail found!',
+                  text2: 'Please check the ticket id',
+                  position: 'bottom', // Changed to bottom for better visibility over modal
+                  bottomOffset: 100,
+                  visibilityTime: 4000,
+              })
+              return
+          } */
+
+        try {
+            const dateTimeDeptLogin = currentVisitorLogInDetailSignOut?.strDeptLogIn!
+            const visitorStrId = currentVisitorLogInDetailSignOut?.strId
+
+
+            const response = await updateVisitorsLogDetail({
+                id: visitorStrId as string,
+                dateTime: dateTimeDeptLogin || '',
+                deptLogOut: formattedDateWithTime(new Date()),
+                userDeptLogOutId: null,
+            }).unwrap()
+
+            console.log(response)
+            // Handle specific error case
+            if (response.ghError === 2001) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Visitor Already Logged Out!',
+                    position: 'bottom',
+                    bottomOffset: 100,
+                    visibilityTime: 4000,
+                })
+                setShowSignOutModal(false)
+                setTicketId('')
+                return;
+            }
+
+            // Success case
+            Toast.show({
+                type: 'success',
+                text1: response.ghMessage.toUpperCase(),
+                position: 'bottom',
+                bottomOffset: 100,
+                visibilityTime: 3000,
+            })
+
+            // Close modal and reset state
+            setShowSignOutModal(false)
+            setTicketId('')
+
+        } catch (error) {
+            console.log('Sign out error:', error)
+
+            // Handle network/API errors
+            Toast.show({
+                type: 'error',
+                text1: 'Sign Out Failed',
+                text2: 'Please try again or check your connection',
+                position: 'bottom',
+                bottomOffset: 100,
+                visibilityTime: 4000,
+            })
+
+            // Optionally keep modal open on error for retry
+            // setShowSignOutModal(false)
+        }
+    }
 
     const handleBarCodeScanned = ({ data }: { data: string }) => {
         setScanned(true)
         processTicketData(data)
     }
 
-    const handleManualSubmit = () => {
+    const handleManualSubmit = async () => {
         if (ticketId.trim() === '') {
             Alert.alert('Error', 'Please enter a ticket ID')
             return
         }
         try {
-            processTicketData(ticketId.trim())
+            const visitorLogInfoData = await visitorLogInfo({ strId: ticketId }).unwrap()
+            const visitorLogInDetailData = await visitorLogInDetailInfo({ strId: ticketId }).unwrap()
+
+            if (visitorLogInfoData?.results.length === 0) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'ID Not in use!',
+                    text2: 'Please check the ticket id'
+                })
+            } else if (visitorLogInfoData?.results?.[0].logOut !== null) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'ID Already Logged Out!',
+                })
+            } else if (visitorLogInfoData?.results?.[0].officeId === Number(selectedDepartment?.officeId) && visitorLogInDetailData?.results?.length === 0) {
+                setShowVisitorInformationCheckingModal(true)
+                setCurrentVisitorLog(visitorLogInfoData?.results?.[0])
+                const imageUrl = visitorLogInfoData?.results?.[0]?.strLogIn.replace(' ', '_').replace(':', '-').replace(':', '-') + '.png';
+                const imageData = await visitorImage({ fileName: imageUrl }).unwrap()
+                if (imageData.idExist && imageData.photoExist) {
+                    setIdVisitorImage(`id_${imageUrl}`)
+                    setPhotoVisitorImage(`face_${imageUrl}`)
+                } else {
+                    setIdVisitorImage(null)
+                    setPhotoVisitorImage(null)
+                }
+            } else {
+                setShowSignOutModal(true)
+                setCurrentVisitorLogInDetailSignOut(visitorLogInDetailData?.results?.[0])
+                setCurrentVisitorLogSignOut(visitorLogInfoData?.results?.[0])
+            }
         } catch (error) {
+            console.log(error)
             Alert.alert('Error', 'Failed to process ticket')
         }
     }
+
+
 
     const processTicketData = (data: string) => {
         Alert.alert(
@@ -86,6 +283,8 @@ export default function Main() {
             </SafeAreaView>
         )
     }
+
+
 
     return (
         <SafeAreaView className="flex-1 bg-gray-100">
@@ -179,7 +378,7 @@ export default function Main() {
                                         Scan QR Code
                                     </Text>
                                     <Text className="text-white text-base text-center">
-                                        Point the camera at a visitor's QR code to scan
+                                        Point the camera at a visitor&apos;s QR code to scan
                                     </Text>
                                 </View>
 
@@ -233,11 +432,9 @@ export default function Main() {
                             <View className="flex-1 px-4 justify-center">
                                 <View className="bg-white rounded-lg p-6 shadow-lg">
                                     <Text className="text-xl font-bold text-center mb-6 text-gray-800">
-                                        Enter Ticket ID (Very Low - Fixed)
+                                        Enter Ticket ID
                                     </Text>
-                                    <Text className="text-base text-gray-700 mb-4">
-                                        Ticket ID:
-                                    </Text>
+
                                     <TextInput
                                         value={ticketId}
                                         onChangeText={setTicketId}
@@ -247,7 +444,7 @@ export default function Main() {
                                         autoCorrect={false}
                                         returnKeyType="done"
                                         onSubmitEditing={handleManualSubmit}
-                                        blurOnSubmit={true}
+                                        placeholderTextColor={'gray'}
                                     />
                                     <TouchableOpacity
                                         onPress={handleManualSubmit}
@@ -264,6 +461,107 @@ export default function Main() {
                 </KeyboardAvoidingView>
             )
             }
+
+            <Modal
+                visible={showDepartmentModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowDepartmentModal(false)}
+            >
+                <View className="flex-1 bg-black/30 justify-center items-center px-4">
+                    <View style={{ height: 500 }} className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <View className="bg-blue-500 px-6 py-4 flex-row justify-between items-center">
+                            <Text className="text-white text-xl font-bold">SELECT DEPARTMENT</Text>
+                            <TouchableOpacity
+                                onPress={() => setShowDepartmentModal(false)}
+                                className="p-2 rounded-full bg-white/20"
+                            >
+                                <Ionicons name="close" size={24} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                        <View className="flex-row px-6 py-4 border-b border-gray-200">
+                            <Text className="flex-1 text-center text-gray-700 font-semibold text-base">Department Name</Text>
+                            <Text className="flex-1 text-center text-gray-700 font-semibold text-base">Office Name</Text>
+                            <Text className="w-16 text-center text-gray-700 font-semibold text-base">Select</Text>
+                        </View>
+                        <ScrollView className="flex-1 px-6 py-4">
+                            <View className="gap-2">
+                                {isLoadingDepartmentData && (
+                                    <View className="flex-1 justify-center items-center">
+                                        <ActivityIndicator size="large" color="#0000ff" />
+                                    </View>
+                                )}
+                                {departmentData?.results?.map((dept) => (
+                                    <TouchableOpacity
+                                        key={dept.id}
+                                        onPress={() => {
+                                            setSelectedDepartment(dept)
+                                        }}
+                                        activeOpacity={0.2}
+                                    >
+                                        <View className={`flex-row items-center py-4 px-3 rounded-lg ${selectedDepartment?.id === dept.id ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'
+                                            }`}>
+                                            <Text className="flex-1 text-gray-800 text-base font-medium">{dept.name}</Text>
+                                            <Text className="flex-1 text-center text-gray-700 text-base font-medium">{dept.officeName}</Text>
+
+                                            {/* Radio Button Indicator */}
+                                            <View className="w-16 items-center justify-center">
+                                                <View className={`w-6 h-6 rounded-full border-2 items-center justify-center ${selectedDepartment?.id === dept.id
+                                                    ? 'border-blue-500 bg-blue-500'
+                                                    : 'border-gray-300 bg-white'
+                                                    }`}>
+                                                    {selectedDepartment?.id === dept.id && (
+                                                        <View className="w-2 h-2 rounded-full bg-white" />
+                                                    )}
+                                                </View>
+                                            </View>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </ScrollView>
+                        <View className="p-6 py-4 border-t border-gray-200 bg-gray-50">
+                            <TouchableOpacity
+                                onPress={() => {
+                                    if (selectedDepartment) {
+                                        setShowDepartmentModal(false);
+                                    }
+                                }}
+                                disabled={!selectedDepartment}
+                                className={`py-4 px-6 rounded-xl ${selectedDepartment
+                                    ? 'bg-blue-500'
+                                    : 'bg-gray-300'
+                                    }`}
+                            >
+                                <Text className={`text-center font-semibold text-base ${selectedDepartment ? 'text-white' : 'text-gray-500'
+                                    }`}>
+                                    Select Department
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            <VisitorInformationModal
+                visible={showVisitorInformationCheckingModal}
+                onClose={handleCloseVisitorInformationCheckingModal}
+                currentVisitorLog={currentVisitorLog}
+                purpose={purpose}
+                handleChangePurpose={handleChangePurpose}
+                onSubmitVisitorLog={handleSubmitVisitorLog}
+                idVisitorImage={idVisitorImage}
+                photoVisitorImage={photoVisitorImage}
+                isLoading={isLoadingCreateVisitorLogDetail}
+            />
+
+            <SignOutModal
+                visible={showSignOutModal}
+                onClose={() => setShowSignOutModal(false)}
+                onConfirm={handleSignOut}
+                ticketId={ticketId}
+            />
+
         </SafeAreaView >
     )
 }

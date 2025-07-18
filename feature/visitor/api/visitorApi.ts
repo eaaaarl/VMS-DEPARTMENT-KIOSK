@@ -1,7 +1,12 @@
 import { RootState } from "@/lib/redux/store";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { formattedDate } from "../utils/formattedDate";
-import { IVisitorLogDetailResponse, IVisitorLogInfoResponse } from "./inteface";
+import {
+  ICreateVisitorLogDetailPayload,
+  IVisitorImageResponse,
+  IVisitorLogDetailResponse,
+  IVisitorLogInfoResponse,
+} from "./inteface";
 
 export const visitorApi = createApi({
   reducerPath: "visitorApi",
@@ -35,12 +40,19 @@ export const visitorApi = createApi({
     });
     return baseQuery(adjustedArgs, api, extraOptions);
   },
+  tagTypes: [
+    "VisitorLogInfo",
+    "VisitorLogInDetailInfo",
+    "VisitorImage",
+    "VisitorLogDetail",
+  ],
   endpoints: (builder) => ({
     visitorLogInfo: builder.query<IVisitorLogInfoResponse, { strId: string }>({
       query: ({ strId }) => ({
         url: `/visitors-log/public?DATE(logIn)='${formattedDate(new Date())}'&strId='${strId}'&limit=1&order=login DESC`,
         method: "GET",
       }),
+      providesTags: ["VisitorLogInfo"],
     }),
 
     visitorLogInDetailInfo: builder.query<
@@ -49,10 +61,64 @@ export const visitorApi = createApi({
     >({
       query: ({ strId }) => {
         return {
-          url: `/visitors-log/public?DATE(visit_log_detail.logIn)='${formattedDate(new Date())}'&visit_log_detail.strId='${strId}'&limit=1&order=login DESC`,
+          url: `/visitors-log-detail/public?DATE(visit_log_detail.logIn)='${formattedDate(new Date())}'&visit_log_detail.strId='${strId}'&limit=1&order=login DESC`,
           method: "GET",
         };
       },
+      providesTags: ["VisitorLogInDetailInfo"],
+    }),
+
+    visitorImage: builder.query<IVisitorImageResponse, { fileName: string }>({
+      query: ({ fileName }) => {
+        return {
+          url: `/visitors-log/public/visit-log/visitors/photo/${fileName}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["VisitorImage"],
+    }),
+
+    createVisitorLogDetail: builder.mutation<
+      {
+        ghError: number;
+        ghMessage: string;
+      },
+      ICreateVisitorLogDetailPayload
+    >({
+      query: ({ payload }) => {
+        return {
+          url: `/visitors-log-detail/public`,
+          method: "POST",
+          body: payload,
+        };
+      },
+      invalidatesTags: [
+        "VisitorLogInfo",
+        "VisitorLogInDetailInfo",
+        "VisitorImage",
+      ],
+    }),
+
+    updateVisitorsLogDetail: builder.mutation<
+      { ghError: number; ghMessage: string },
+      {
+        id: string;
+        dateTime: string;
+        deptLogOut: string;
+        userDeptLogOutId: number | null;
+      }
+    >({
+      query: ({ id, dateTime, deptLogOut, userDeptLogOutId }) => {
+        return {
+          url: `/visitors-log-detail/public/visit-log-detail/${id}/${dateTime}`,
+          method: "PUT",
+          body: {
+            deptLogOut,
+            userDeptLogOutId,
+          },
+        };
+      },
+      invalidatesTags: ["VisitorLogInfo", "VisitorLogInDetailInfo"],
     }),
   }),
 });
@@ -62,4 +128,8 @@ export const {
   useLazyVisitorLogInfoQuery,
   useVisitorLogInDetailInfoQuery,
   useLazyVisitorLogInDetailInfoQuery,
+  useVisitorImageQuery,
+  useLazyVisitorImageQuery,
+  useCreateVisitorLogDetailMutation,
+  useUpdateVisitorsLogDetailMutation,
 } = visitorApi;
