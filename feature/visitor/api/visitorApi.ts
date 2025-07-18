@@ -1,7 +1,11 @@
 import { RootState } from "@/lib/redux/store";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { formattedDate } from "../utils/formattedDate";
-import { IVisitorLogDetailResponse, IVisitorLogInfoResponse } from "./inteface";
+import {
+  IVisitorImageResponse,
+  IVisitorLogDetailResponse,
+  IVisitorLogInfoResponse,
+} from "./inteface";
 
 export const visitorApi = createApi({
   reducerPath: "visitorApi",
@@ -54,6 +58,15 @@ export const visitorApi = createApi({
         };
       },
     }),
+
+    visitorImage: builder.query<IVisitorImageResponse, { fileName: string }>({
+      query: ({ fileName }) => {
+        return {
+          url: `/visitors-log/public/visit-log/visitors/photo/${fileName}`,
+          method: "GET",
+        };
+      },
+    }),
   }),
 });
 
@@ -62,4 +75,6 @@ export const {
   useLazyVisitorLogInfoQuery,
   useVisitorLogInDetailInfoQuery,
   useLazyVisitorLogInDetailInfoQuery,
+  useVisitorImageQuery,
+  useLazyVisitorImageQuery,
 } = visitorApi;

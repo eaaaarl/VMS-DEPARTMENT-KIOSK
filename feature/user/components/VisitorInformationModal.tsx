@@ -1,7 +1,9 @@
 import { VisitorLog } from '@/feature/visitor/api/inteface';
+import { useAppSelector } from '@/lib/redux/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
+  Image,
   Modal,
   Text,
   TextInput,
@@ -15,12 +17,14 @@ interface VisitorInformationModalProps {
   currentVisitorLog: VisitorLog | null
   purpose: string
   handleChangePurpose: (purpose: string) => void
-  image?: string;
-  onSubmitVisitorLog: () => void;
+  onSubmitVisitorLog: () => void,
+  idVisitorImage?: string | null,
+  photoVisitorImage?: string | null
 }
 
-const VisitorInformationModal = ({ visible, onClose, currentVisitorLog, purpose, handleChangePurpose, image, onSubmitVisitorLog }: VisitorInformationModalProps) => {
-  console.log('VisitorInformationModal', image)
+const VisitorInformationModal = ({ visible, onClose, currentVisitorLog, purpose, handleChangePurpose, onSubmitVisitorLog, idVisitorImage, photoVisitorImage }: VisitorInformationModalProps) => {
+  const { ipAddress, port } = useAppSelector((state) => state.config)
+
   return (
     <Modal
       visible={visible}
@@ -45,34 +49,52 @@ const VisitorInformationModal = ({ visible, onClose, currentVisitorLog, purpose,
           <View className="flex-row p-4 gap-3">
             <View className="flex-1">
               <Text className="text-sm font-semibold mb-2 text-gray-800">ID Photo</Text>
-              <View className="h-28 bg-gray-100 rounded-lg justify-center items-center relative border-2 border-red-500">
-                <View className="w-14 h-10 justify-center items-center">
-                  <View className="w-12 h-8 bg-white rounded border-2 border-gray-800 p-1 relative">
-                    <View className="h-0.5 bg-gray-800 mb-0.5 w-3/4" />
-                    <View className="h-0.5 bg-gray-800 mb-0.5 w-3/4" />
-                    <View className="h-0.5 bg-gray-800 mb-0.5 w-3/4" />
-                    <View className="absolute right-0.5 bottom-0.5 w-3 h-3 bg-gray-800 rounded-full" />
+              <View className="h-28 bg-gray-100 rounded-lg justify-center items-center relative border-2 border-red-500 overflow-hidden">
+                {idVisitorImage ? (
+                  <Image
+                    source={{ uri: `http://${ipAddress}:${port}/uploads/logs/${idVisitorImage}` }}
+                    className="w-full h-full"
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View className="w-full h-full justify-center items-center">
+                    <View className="w-14 h-10 justify-center items-center">
+                      <View className="w-12 h-8 bg-white rounded border-2 border-gray-800 p-1 relative">
+                        <View className="h-0.5 bg-gray-800 mb-0.5 w-3/4" />
+                        <View className="h-0.5 bg-gray-800 mb-0.5 w-3/4" />
+                        <View className="h-0.5 bg-gray-800 mb-0.5 w-3/4" />
+                        <View className="absolute right-0.5 bottom-0.5 w-3 h-3 bg-gray-800 rounded-full" />
+                      </View>
+                    </View>
+                    <View className="absolute inset-0 justify-center items-center">
+                      <View className="w-20 h-20 border-4 border-red-500 rounded-full" />
+                      <View className="absolute w-16 h-0.5 bg-red-500 rotate-45" />
+                    </View>
                   </View>
-                </View>
-                {/* Red prohibition overlay */}
-                <View className="absolute inset-0 justify-center items-center">
-                  <View className="w-20 h-20 border-4 border-red-500 rounded-full" />
-                  <View className="absolute w-16 h-0.5 bg-red-500 rotate-45" />
-                </View>
+                )}
               </View>
             </View>
 
             <View className="flex-1">
               <Text className="text-sm font-semibold mb-2 text-gray-800">Face Photo</Text>
-              <View className="h-28 bg-gray-100 rounded-lg justify-center items-center relative border-2 border-orange-400">
-                <View className="w-12 h-12 justify-center items-center">
-                  <View className="w-10 h-10 bg-gray-500 rounded-full" />
-                </View>
-                {/* Red prohibition overlay */}
-                <View className="absolute inset-0 justify-center items-center">
-                  <View className="w-20 h-20 border-4 border-red-500 rounded-full" />
-                  <View className="absolute w-16 h-0.5 bg-red-500 rotate-45" />
-                </View>
+              <View className="h-28 bg-gray-100 rounded-lg justify-center items-center relative border-2 border-orange-400 overflow-hidden">
+                {photoVisitorImage ? (
+                  <Image
+                    source={{ uri: `http://${ipAddress}:${port}/uploads/logs/${photoVisitorImage}` }}
+                    className="w-full h-full"
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View className="w-full h-full justify-center items-center">
+                    <View className="w-12 h-12 justify-center items-center">
+                      <View className="w-10 h-10 bg-gray-500 rounded-full" />
+                    </View>
+                    <View className="absolute inset-0 justify-center items-center">
+                      <View className="w-20 h-20 border-4 border-red-500 rounded-full" />
+                      <View className="absolute w-16 h-0.5 bg-red-500 rotate-45" />
+                    </View>
+                  </View>
+                )}
               </View>
             </View>
           </View>

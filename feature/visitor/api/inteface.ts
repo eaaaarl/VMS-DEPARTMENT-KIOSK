@@ -62,3 +62,8 @@ export interface VisitorLogDetail {
 export interface IVisitorLogDetailResponse {
   results: VisitorLogDetail[];
 }
+
+export interface IVisitorImageResponse {
+  idExist: boolean;
+  photoExist: boolean;
+}

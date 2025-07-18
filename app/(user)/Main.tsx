@@ -2,7 +2,7 @@ import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi'
 import { Department } from '@/feature/department/api/interface'
 import VisitorInformationModal from '@/feature/user/components/VisitorInformationModal'
 import { VisitorLog } from '@/feature/visitor/api/inteface'
-import { useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery } from '@/feature/visitor/api/visitorApi'
+import { useLazyVisitorImageQuery, useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery } from '@/feature/visitor/api/visitorApi'
 import { Ionicons } from '@expo/vector-icons'
 import { Camera, CameraView } from 'expo-camera'
 import React, { useEffect, useState } from 'react'
@@ -34,11 +34,13 @@ export default function Main() {
     const [showVisitorInformationCheckingModal, setShowVisitorInformationCheckingModal] = useState(false)
     const [currentVisitorLog, setCurrentVisitorLog] = useState<VisitorLog | null>(null)
     const [purpose, setPurpose] = useState('')
-    const [currentImage, setCurrentImage] = useState('')
+    const [idVisitorImage, setIdVisitorImage] = useState<string | null>(null)
+    const [photoVisitorImage, setPhotoVisitorImage] = useState<string | null>(null)
 
     const { data: departmentData, isLoading: isLoadingDepartmentData } = useGetAllDepartmentQuery()
     const [visitorLogInfo, { isLoading: isLoadingVisitorLogInfo }] = useLazyVisitorLogInfoQuery();
     const [visitorLogInDetailInfo, { isLoading: isLoadingVisitorLogInDetailInfo }] = useLazyVisitorLogInDetailInfoQuery();
+    const [visitorImage, { isLoading: isLoadingVisitorImage }] = useLazyVisitorImageQuery();
 
     useEffect(() => {
         const getCameraPermissions = async () => {
@@ -98,7 +100,15 @@ export default function Main() {
             } else if (visitorLogInfoData?.results?.[0].officeId === Number(selectedDepartment?.officeId) && visitorLogInDetailData?.results?.length === 0) {
                 setShowVisitorInformationCheckingModal(true)
                 setCurrentVisitorLog(visitorLogInfoData?.results?.[0])
-                setCurrentImage(visitorLogInfoData?.results?.[0]?.strLogIn.replace(' ', '_').replace(':', '-').replace(':', '-') + '.png')
+                const imageUrl = visitorLogInfoData?.results?.[0]?.strLogIn.replace(' ', '_').replace(':', '-').replace(':', '-') + '.png';
+                const imageData = await visitorImage({ fileName: imageUrl }).unwrap()
+                if (imageData.idExist && imageData.photoExist) {
+                    setIdVisitorImage(`id_${imageUrl}`)
+                    setPhotoVisitorImage(`face_${imageUrl}`)
+                } else {
+                    setIdVisitorImage(null)
+                    setPhotoVisitorImage(null)
+                }
             }
         } catch (error) {
             console.log(error)
@@ -147,13 +157,15 @@ export default function Main() {
         )
     }
 
+
+
     return (
         <SafeAreaView className="flex-1 bg-gray-100">
             <View className="p-5">
                 <Text className="text-2xl font-bold text-center mb-5 text-gray-800">
                     Visitor Entry System
                 </Text>
-                <View className="flex-row bg-grcay-200 rounded-lg p-2 mb-5 gap-2">
+                <View className="flex-row bg-gray-200 rounded-lg p-2 mb-5 gap-2">
                     <TouchableOpacity
                         onPress={() => setInputMethod('camera')}
                         className={`flex-1 py-3 rounded-lg ${inputMethod === 'camera' ? 'bg-blue-500' : 'bg-transparent'
@@ -411,6 +423,8 @@ export default function Main() {
                 purpose={purpose}
                 handleChangePurpose={handleChangePurpose}
                 onSubmitVisitorLog={handleSubmitVisitorLog}
+                idVisitorImage={idVisitorImage}
+                photoVisitorImage={photoVisitorImage}
             />
         </SafeAreaView >
     )
