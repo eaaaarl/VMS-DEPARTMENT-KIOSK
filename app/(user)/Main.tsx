@@ -5,8 +5,10 @@ import VisitorInformationModal from '@/feature/user/components/VisitorInformatio
 import { ICreateVisitorLogDetailPayload, VisitorLog, VisitorLogDetail } from '@/feature/visitor/api/inteface'
 import { useCreateVisitorLogDetailMutation, useLazyVisitorImageQuery, useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery, useUpdateVisitorsLogDetailMutation } from '@/feature/visitor/api/visitorApi'
 import { formattedDateWithTime } from '@/feature/visitor/utils/formattedDate'
+import { useAppSelector } from '@/lib/redux/hooks'
 import { Ionicons } from '@expo/vector-icons'
 import { Camera, CameraView } from 'expo-camera'
+import { router } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import {
     ActivityIndicator,
@@ -35,14 +37,12 @@ export default function Main() {
     const [showDepartmentModal, setShowDepartmentModal] = useState(false)
     const [showVisitorInformationCheckingModal, setShowVisitorInformationCheckingModal] = useState(false)
     const [currentVisitorLog, setCurrentVisitorLog] = useState<VisitorLog | null>(null)
-
     const [currentVisitorLogInDetailSignOut, setCurrentVisitorLogInDetailSignOut] = useState<VisitorLogDetail | null>(null)
-    const [currentVisitorLogSignOut, setCurrentVisitorLogSignOut] = useState<VisitorLog | null>(null)
-
     const [purpose, setPurpose] = useState('')
     const [idVisitorImage, setIdVisitorImage] = useState<string | null>(null)
     const [photoVisitorImage, setPhotoVisitorImage] = useState<string | null>(null)
     const [showSignOutModal, setShowSignOutModal] = useState(false)
+    const { ipAddress, port } = useAppSelector((state) => state.config)
 
     const { data: departmentData, isLoading: isLoadingDepartmentData } = useGetAllDepartmentQuery()
     const [visitorLogInfo] = useLazyVisitorLogInfoQuery();
@@ -50,6 +50,13 @@ export default function Main() {
     const [visitorImage] = useLazyVisitorImageQuery();
 
     useEffect(() => {
+        const checkingConfig = async () => {
+            if (!ipAddress || ipAddress === '' || !port || port === 0) {
+                router.replace('/(developer)/DeveloperSetting');
+                return;
+            }
+        }
+
         const getCameraPermissions = async () => {
             const { status } = await Camera.requestCameraPermissionsAsync()
             setHasPermission(status === 'granted')
@@ -65,7 +72,8 @@ export default function Main() {
 
         getCameraPermissions()
         checkingDepartment()
-    }, [selectedDepartment])
+        checkingConfig()
+    }, [selectedDepartment, ipAddress, port])
 
     const handleChangePurpose = (purpose: string) => {
         setPurpose(purpose)
@@ -120,20 +128,18 @@ export default function Main() {
 
 
     const handleSignOut = async () => {
-        console.log(currentVisitorLogInDetailSignOut?.strId, currentVisitorLogInDetailSignOut?.strDeptLogIn)
 
-        // Check if visitor data exists
-        /*   if (!currentVisitorLogInDetail?.strId || !currentVisitorLogInDetail?.strDeptLogIn) {
-              Toast.show({
-                  type: 'error',
-                  text1: 'No visitor log in detail found!',
-                  text2: 'Please check the ticket id',
-                  position: 'bottom', // Changed to bottom for better visibility over modal
-                  bottomOffset: 100,
-                  visibilityTime: 4000,
-              })
-              return
-          } */
+        if (!currentVisitorLogInDetailSignOut?.strId || !currentVisitorLogInDetailSignOut?.strDeptLogIn) {
+            Toast.show({
+                type: 'error',
+                text1: 'No visitor log in detail found!',
+                text2: 'Please check the ticket id',
+                position: 'bottom', // Changed to bottom for better visibility over modal
+                bottomOffset: 100,
+                visibilityTime: 4000,
+            })
+            return
+        }
 
         try {
             const dateTimeDeptLogin = currentVisitorLogInDetailSignOut?.strDeptLogIn!
@@ -147,8 +153,6 @@ export default function Main() {
                 userDeptLogOutId: null,
             }).unwrap()
 
-            console.log(response)
-            // Handle specific error case
             if (response.ghError === 2001) {
                 Toast.show({
                     type: 'error',
@@ -162,7 +166,6 @@ export default function Main() {
                 return;
             }
 
-            // Success case
             Toast.show({
                 type: 'success',
                 text1: response.ghMessage.toUpperCase(),
@@ -171,7 +174,6 @@ export default function Main() {
                 visibilityTime: 3000,
             })
 
-            // Close modal and reset state
             setShowSignOutModal(false)
             setTicketId('')
 
@@ -233,7 +235,6 @@ export default function Main() {
             } else {
                 setShowSignOutModal(true)
                 setCurrentVisitorLogInDetailSignOut(visitorLogInDetailData?.results?.[0])
-                setCurrentVisitorLogSignOut(visitorLogInfoData?.results?.[0])
             }
         } catch (error) {
             console.log(error)
@@ -283,8 +284,6 @@ export default function Main() {
             </SafeAreaView>
         )
     }
-
-
 
     return (
         <SafeAreaView className="flex-1 bg-gray-100">
@@ -560,6 +559,7 @@ export default function Main() {
                 onClose={() => setShowSignOutModal(false)}
                 onConfirm={handleSignOut}
                 ticketId={ticketId}
+                isLoading={isLoadingUpdateVisitorsLogDetail}
             />
 
         </SafeAreaView >
