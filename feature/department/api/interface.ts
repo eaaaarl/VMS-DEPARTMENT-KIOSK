@@ -1,7 +1,7 @@
 export interface Department {
   id: number;
   name: string;
-  officeId: 1;
+  officeId: number;
   officeName: string;
 }
 
