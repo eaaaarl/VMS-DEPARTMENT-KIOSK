@@ -1,15 +1,25 @@
 import ConfigDisplay from '@/feature/developer/ConfigDisplay'
-import { useAppDispatch } from '@/lib/redux/hooks'
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks'
 import { resetConfig, setConfig } from '@/lib/redux/state/configSlice'
-import React, { useState } from 'react'
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import Toast from 'react-native-toast-message'
 
 export default function DeveloperSetting() {
   const dispatch = useAppDispatch()
+  const currentConfig = useAppSelector((state) => state.config)
   const [ipAddress, setIpAddress] = useState('')
   const [port, setPort] = useState('')
   const [errors, setErrors] = useState<{ ipAddress?: string, port?: string }>({})
+  const [loading, setLoading] = useState(false)
+  useEffect(() => {
+    if (currentConfig.ipAddress) {
+      setIpAddress(currentConfig.ipAddress)
+    }
+    if (currentConfig.port) {
+      setPort(currentConfig.port.toString())
+    }
+  }, [currentConfig.ipAddress, currentConfig.port])
 
   const validateIP = (ip: string) => {
     const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
@@ -39,6 +49,7 @@ export default function DeveloperSetting() {
     setErrors(newErrors)
 
     try {
+      setLoading(true)
       dispatch(setConfig({ ipAddress: ipAddress, port: parseInt(port) }))
       Toast.show({
         type: 'success',
@@ -47,6 +58,8 @@ export default function DeveloperSetting() {
       })
     } catch (error) {
       console.log(error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -77,6 +90,7 @@ export default function DeveloperSetting() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
       className="flex-1 bg-gray-50"
     >
       <ScrollView className="flex-1 px-4 py-6">
@@ -127,29 +141,26 @@ export default function DeveloperSetting() {
               <Text className="text-red-500 text-sm mt-1">{errors.port}</Text>
             )}
           </View>
-
-
         </View>
-
-
-
         {/* Action Buttons */}
         <View className="flex-row gap-4 mb-8">
           <TouchableOpacity
             onPress={handleSave}
             className="flex-1 bg-blue-600 rounded-lg py-4 items-center shadow-sm"
+            disabled={loading}
           >
             <Text className="text-white font-semibold text-base">
-              Save Settings
+              {loading ? <ActivityIndicator size="small" color="#fff" /> : 'Save Settings'}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleReset}
             className="flex-1 bg-gray-200 rounded-lg py-4 items-center"
+            disabled={loading}
           >
             <Text className="text-gray-700 font-semibold text-base">
-              Reset
+              {loading ? <ActivityIndicator size="small" color="#000" /> : 'Reset'}
             </Text>
           </TouchableOpacity>
         </View>

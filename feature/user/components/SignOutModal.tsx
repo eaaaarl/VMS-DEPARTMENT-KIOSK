@@ -1,14 +1,15 @@
 import React from 'react';
-import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 
 interface SignOutModalProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: () => void;
   ticketId: string;
+  isLoading: boolean;
 }
 
-export default function SignOutModal({ visible, onClose, onConfirm, ticketId }: SignOutModalProps) {
+export default function SignOutModal({ visible, onClose, onConfirm, ticketId, isLoading }: SignOutModalProps) {
   return (
     <Modal
       visible={visible}
@@ -45,15 +46,17 @@ export default function SignOutModal({ visible, onClose, onConfirm, ticketId }: 
             <TouchableOpacity
               className="flex-1 bg-blue-500 py-3 rounded-lg"
               onPress={onConfirm}
+              disabled={isLoading}
             >
               <Text className="text-white text-center font-semibold text-base">
-                Yes
+                {isLoading ? <ActivityIndicator size="small" color="#fff" /> : 'Yes'}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               className="flex-1 bg-red-500 py-3 rounded-lg"
               onPress={onClose}
+              disabled={isLoading}
             >
               <Text className="text-white text-center font-semibold text-base">
                 Cancel
