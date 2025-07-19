@@ -22,7 +22,7 @@ export default function LayoutDeveloper() {
           headerLeft: () => null,
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => router.push('/(main)')}
+              onPress={() => router.push('/(mode)/mode')}
               style={{
                 paddingHorizontal: 12,
                 paddingVertical: 8,

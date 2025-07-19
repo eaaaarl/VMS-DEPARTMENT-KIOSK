@@ -42,7 +42,7 @@ export default function ModeSelection() {
         if (mode === 'Kiosk') {
             router.push('/(main)')
         } else if (mode === 'User') {
-            router.push('/(user)/dashboard')
+            router.push('/(user)/Dashboard')
         }
     }
 
