@@ -14,13 +14,13 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 
 export default function ManualEntryScreen() {
@@ -83,7 +83,7 @@ export default function ManualEntryScreen() {
             logIn: formattedDateWithTime(new Date(currentVisitorLog?.logIn || '')),
             deptLogIn: formattedDateWithTime(new Date()),
             visitorId: currentVisitorLog?.visitorId as number,
-            deptId: 0,
+            deptId: departmentManualEntry?.id as number,
             reason: purpose,
             // null for no user
             userDeptLogInId: null
@@ -170,10 +170,7 @@ export default function ManualEntryScreen() {
       return
     }
 
-    console.log(departmentManualEntry)
-    console.log(ticketId)
-
-    /* setIsSubmitting(true)
+    setIsSubmitting(true)
     try {
       const visitorLogInfoData = await visitorLogInfo({ strId: ticketId }).unwrap()
       const visitorLogInDetailData = await visitorLogInDetailInfo({ strId: ticketId }).unwrap()
@@ -189,7 +186,7 @@ export default function ManualEntryScreen() {
           type: 'error',
           text1: 'ID Already Logged Out!',
         })
-      } else if (visitorLogInfoData?.results?.[0].officeId === Number(departmentManualEntry?.officeId) && visitorLogInDetailData?.results?.length === 0) {
+      } else if (visitorLogInfoData?.results?.[0].officeId === Number(departmentManualEntry?.officeId) && (visitorLogInDetailData?.results?.length === 0 || visitorLogInDetailData?.results?.[0]?.deptLogOut !== null)) {
         setShowVisitorInformationCheckingModal(true)
         setCurrentVisitorLog(visitorLogInfoData?.results?.[0])
         const imageUrl = visitorLogInfoData?.results?.[0]?.strLogIn.replace(' ', '_').replace(':', '-').replace(':', '-') + '.png';
@@ -210,7 +207,7 @@ export default function ManualEntryScreen() {
       Alert.alert('Error', 'Failed to process ticket')
     } finally {
       setIsSubmitting(false)
-    } */
+    }
   }
 
 
@@ -256,6 +253,7 @@ export default function ManualEntryScreen() {
                   autoFocus={true}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  keyboardType="numeric"
                 />
 
                 <TouchableOpacity
