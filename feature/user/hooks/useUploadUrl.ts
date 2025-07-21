@@ -4,7 +4,7 @@ interface UploadUrlProps {
   fileName?: string;
 }
 
-export const useUploadUrl = ({ fileName }: UploadUrlProps) => {
+export const UseUploadUrl = ({ fileName }: UploadUrlProps) => {
   const { ipAddress, port } = useAppSelector((state) => state.config);
 
   const imageUrl = `http://${ipAddress}:${port}/uploads/logs/${fileName}`;

@@ -1,11 +1,13 @@
 import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi';
 import { Department } from '@/feature/department/api/interface';
 import { useAppDispatch } from '@/lib/redux/hooks';
+import { setDepartmentCameraEntry } from '@/lib/redux/state/departmentCameraEntrySlice';
 import { setDepartmentManualEntry } from '@/lib/redux/state/departmentManualEntrySlice';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 export default function Dashboard() {
   // Redux
@@ -45,13 +47,32 @@ export default function Dashboard() {
 
   // Handlers
   const handleCameraScan = () => {
+    if (!selectedDepartment) {
+      Toast.show({
+        type: 'error',
+        text1: 'Department Selection Required',
+        text2: 'Please select a department before proceeding',
+      });
+
+      return;
+    }
+
+    dispatch(setDepartmentCameraEntry(selectedDepartment));
     router.push('/(user)/CameraScreen')
   }
 
   const handleManualEntry = () => {
-    if (selectedDepartment) {
-      dispatch(setDepartmentManualEntry(selectedDepartment));
+    if (!selectedDepartment) {
+      Toast.show({
+        type: 'error',
+        text1: 'Department Selection Required',
+        text2: 'Please select a department before proceeding',
+      });
+
+      return;
     }
+
+    dispatch(setDepartmentManualEntry(selectedDepartment));
     router.push('/(user)/ManualEntryScreen')
   }
 
