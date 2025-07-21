@@ -116,7 +116,7 @@ export default function SignIn() {
         <Pressable
           onPress={() => {
             if (LayoutMode === 'User') {
-              router.replace('/(user)/Main')
+              router.replace('/(user)/Dashboard')
             } else if (LayoutMode === 'Kiosk') {
               router.replace('/(main)')
             }

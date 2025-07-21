@@ -12,7 +12,6 @@ export default function ModeSelection() {
     const isLandscape = useAppSelector(state => state.mode.isLandscape)
     const { width, height } = useWindowDimensions()
 
-    // Detect device type and orientation on mount and dimension changes
     useEffect(() => {
         const detectDeviceType = (): DeviceType => {
             // Check if device is a tablet based on screen size and pixel density
@@ -134,20 +133,17 @@ export default function ModeSelection() {
 
     return (
         <View className={styles.container}>
-            {/* Header */}
             <View className={styles.header}>
                 <Text className={styles.title}>
-                    Visitor Management System
+                    VMS - Department
                 </Text>
                 <Text className={styles.subtitle}>
                     Please select your access mode
                 </Text>
             </View>
 
-            {/* Mode Selection Cards */}
             <View className={styles.cardsContainer}>
                 <View className={styles.cardsLayout}>
-                    {/* Visitor Mode Card */}
                     <TouchableOpacity
                         onPress={() => handleModeSelect('Kiosk')}
                         className={styles.card}
@@ -169,7 +165,6 @@ export default function ModeSelection() {
                         </View>
                     </TouchableOpacity>
 
-                    {/* Staff Mode Card */}
                     <TouchableOpacity
                         onPress={() => handleModeSelect('User')}
                         className={styles.card}
@@ -193,7 +188,6 @@ export default function ModeSelection() {
                 </View>
             </View>
 
-            {/* Current Selection Indicator */}
             {currentMode && (
                 <View className={`mt-${deviceType === 'mobile' ? '4' : '8'} px-${deviceType === 'mobile' ? '4' : '6'} py-${deviceType === 'mobile' ? '2' : '3'} bg-gray-800 rounded-full`}>
                     <Text className={`text-white font-medium ${deviceType === 'mobile' ? 'text-xs' : ''}`}>
@@ -202,7 +196,6 @@ export default function ModeSelection() {
                 </View>
             )}
 
-            {/* Footer */}
             <View className={styles.footer}>
                 <Text className={styles.footerText}>
                     You can change this setting anytime in the app

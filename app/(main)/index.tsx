@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { setSelectedDepartment } from '@/lib/redux/state/departmentSlice';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 
 export default function Index() {
@@ -16,10 +16,25 @@ export default function Index() {
   const { data: departmentData, isLoading: isLoadingDepartment, isError } = useGetAllDepartmentQuery();
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
 
+
+  const checkingConfig = useMemo(() => {
+    if (!ipAddress || ipAddress === '' || !port || port === 0) {
+      return false;
+    }
+    return true;
+  }, [ipAddress, port]);
+
+  const checkingIfHaveDepartment = useMemo(() => {
+    if (!currentDepartment && !isLoadingDepartment && departmentData) {
+      return false;
+    }
+    return true;
+  }, [currentDepartment, isLoadingDepartment, departmentData]);
+
   useEffect(() => {
     if (isNavigating) return;
 
-    if (!ipAddress || ipAddress === '' || !port || port === 0) {
+    if (!checkingConfig) {
       setIsNavigating(true);
       router.replace('/(developer)/DeveloperSetting');
       return;
@@ -27,7 +42,13 @@ export default function Index() {
 
     if (isError) {
       setIsNavigating(true);
-      router.replace('/(developer)/DeveloperSetting');
+
+      if (!checkingConfig) {
+        router.replace('/(developer)/DeveloperSetting');
+      } else {
+        router.replace('/(error)/error-screen');
+      }
+
       return;
     }
 
@@ -36,15 +57,16 @@ export default function Index() {
       router.replace('/(mode)/mode');
       return;
     }
-  }, [ipAddress, port, LayoutMode, isError, isNavigating]);
+
+  }, [checkingConfig, LayoutMode, isError, isNavigating, checkingIfHaveDepartment]);
 
   useEffect(() => {
     if (isNavigating) return;
 
-    if (!currentDepartment && !isLoadingDepartment && departmentData) {
+    if (!checkingIfHaveDepartment) {
       setShowDepartmentModal(true);
     }
-  }, [currentDepartment, isLoadingDepartment, departmentData, isNavigating]);
+  }, [checkingIfHaveDepartment, isNavigating]);
 
   const handleSignIn = useCallback(() => {
     if (!currentDepartment) {

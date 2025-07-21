@@ -15,11 +15,11 @@ import {
   Alert,
   Animated,
   Dimensions,
-  SafeAreaView,
   Text,
   TouchableOpacity,
   View
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
