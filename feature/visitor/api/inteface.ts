@@ -87,3 +87,16 @@ export interface ICreateVisitorLogOutPayload {
   deptLogOut: string;
   userDeptLogOutId: number | null;
 }
+
+export interface ICreateVisitorLogPayload {
+  id: number;
+  strId: string;
+  logIn: string;
+  logInDate: string;
+  visitorId: number;
+  officeId: number;
+  serviceId: number;
+  specService: string;
+  returned: boolean;
+  userLogInId: number | null;
+}

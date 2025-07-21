@@ -1,11 +1,12 @@
 
 import SignOutModal from '@/feature/user/components/SignOutModal'
 import VisitorInformationModal from '@/feature/user/components/VisitorInformationModal'
-import { ICreateVisitorLogDetailPayload, VisitorLog, VisitorLogDetail } from '@/feature/visitor/api/inteface'
-import { useCreateVisitorLogDetailMutation, useLazyVisitorImageQuery, useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery, useUpdateVisitorsLogDetailMutation } from '@/feature/visitor/api/visitorApi'
+import { ICreateVisitorLogDetailPayload, ICreateVisitorLogPayload, VisitorLog, VisitorLogDetail } from '@/feature/visitor/api/inteface'
+import { useCreateVisitorLogDetailMutation, useCreateVisitorLogMutation, useLazyVisitorImageQuery, useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery, useUpdateVisitorLogMutation, useUpdateVisitorsLogDetailMutation } from '@/feature/visitor/api/visitorApi'
 import { formattedDateWithTime } from '@/feature/visitor/utils/formattedDate'
 import { useAppSelector } from '@/lib/redux/hooks'
 import { Ionicons } from '@expo/vector-icons'
+import { format, parse, subMinutes } from 'date-fns'
 import { router } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import {
@@ -13,6 +14,7 @@ import {
   Alert,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Text,
   TextInput,
@@ -24,7 +26,12 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 
 export default function ManualEntryScreen() {
+  // Redux State
   const { departmentManualEntry } = useAppSelector((state) => state.departmentManualEntry)
+  const { ipAddress, port } = useAppSelector((state) => state.config)
+
+
+  // State
   const [ticketId, setTicketId] = useState('')
   const [showVisitorInformationCheckingModal, setShowVisitorInformationCheckingModal] = useState(false)
   const [currentVisitorLog, setCurrentVisitorLog] = useState<VisitorLog | null>(null)
@@ -34,12 +41,18 @@ export default function ManualEntryScreen() {
   const [photoVisitorImage, setPhotoVisitorImage] = useState<string | null>(null)
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { ipAddress, port } = useAppSelector((state) => state.config)
+  const [showModal, setShowModal] = useState(false)
+  const [modalMessage, setModalMessage] = useState<string>('')
 
+  const [visitorDetailSignInDifferentOffice, setVisitorDetailSignInDifferentOffice] = useState<VisitorLogDetail | null>(null)
+  const [visitorLogSignInDifferentOffice, setVisitorLogSignInDifferentOffice] = useState<VisitorLog | null>(null)
+
+  // RTK Query
   const [visitorLogInfo] = useLazyVisitorLogInfoQuery();
   const [visitorLogInDetailInfo] = useLazyVisitorLogInDetailInfoQuery();
   const [visitorImage] = useLazyVisitorImageQuery();
 
+  // Effect
   useEffect(() => {
     const checkingConfig = async () => {
       if (!ipAddress || ipAddress === '' || !port || port === 0) {
@@ -51,6 +64,7 @@ export default function ManualEntryScreen() {
     checkingConfig()
   }, [ipAddress, port])
 
+  // Handlers
   const handleChangePurpose = (purpose: string) => {
     setPurpose(purpose)
   }
@@ -64,6 +78,8 @@ export default function ManualEntryScreen() {
 
   const [createVisitorLogDetail, { isLoading: isLoadingCreateVisitorLogDetail }] = useCreateVisitorLogDetailMutation();
   const [updateVisitorsLogDetail, { isLoading: isLoadingUpdateVisitorsLogDetail }] = useUpdateVisitorsLogDetailMutation();
+  const [updateVisitorLog, { isLoading: isLoadingUpdateVisitorLog }] = useUpdateVisitorLogMutation();
+  const [createVisitorLog, { isLoading: isLoadingCreateVisitorLog }] = useCreateVisitorLogMutation();
 
   const handleSubmitVisitorLog = async () => {
     if (purpose.trim() === '') {
@@ -175,18 +191,34 @@ export default function ManualEntryScreen() {
       const visitorLogInfoData = await visitorLogInfo({ strId: ticketId }).unwrap()
       const visitorLogInDetailData = await visitorLogInDetailInfo({ strId: ticketId }).unwrap()
 
+      // Check if the ticket id is exist
       if (visitorLogInfoData?.results.length === 0) {
         Toast.show({
           type: 'error',
           text1: 'ID Not in use!',
           text2: 'Please check the ticket id'
         })
-      } else if (visitorLogInfoData?.results?.[0].logOut !== null) {
+
+        return;
+      }
+
+      // Check if the ticket id is already logged out
+      if (visitorLogInfoData?.results?.[0].logOut !== null) {
         Toast.show({
           type: 'error',
           text1: 'ID Already Logged Out!',
         })
-      } else if (visitorLogInfoData?.results?.[0].officeId === Number(departmentManualEntry?.officeId) && (visitorLogInDetailData?.results?.length === 0 || visitorLogInDetailData?.results?.[0]?.deptLogOut !== null)) {
+
+        return;
+      }
+
+      // Check if the visitor is in the same office
+      const sameOfficeVisitor = visitorLogInfoData?.results?.[0].officeId === Number(departmentManualEntry?.officeId)
+      // Check if the visitor is not logged out
+      const visitorNotLoggedOut = visitorLogInDetailData?.results?.length === 0 || visitorLogInDetailData?.results?.[0]?.deptLogOut !== null
+
+      // Check if the visitor is in the same office and not logged out
+      if (sameOfficeVisitor && visitorNotLoggedOut) {
         setShowVisitorInformationCheckingModal(true)
         setCurrentVisitorLog(visitorLogInfoData?.results?.[0])
         const imageUrl = visitorLogInfoData?.results?.[0]?.strLogIn.replace(' ', '_').replace(':', '-').replace(':', '-') + '.png';
@@ -198,10 +230,37 @@ export default function ManualEntryScreen() {
           setIdVisitorImage(null)
           setPhotoVisitorImage(null)
         }
-      } else {
-        setShowSignOutModal(true)
-        setCurrentVisitorLogInDetailSignOut(visitorLogInDetailData?.results?.[0])
+
+        return;
       }
+
+      const visitorInDifferentDepartment = visitorLogInDetailData?.results?.[0]?.deptId !== Number(departmentManualEntry?.id)
+      const visitorIsHaveDeptLogIn = visitorLogInDetailData?.results?.length !== 0
+
+      // Check if the visitor is in the different office, but same department
+      // if (!sameOfficeVisitor && visitorIsHaveDeptLogIn && visitorInDifferentDepartment) {
+      //   setShowModal(true)
+      //   setModalMessage(`Visitor is not currently in the office premise,${'\n'}Do you want to automatically sign out${'\n'}their previous office location?`); return;
+      // }
+
+      const visitorISnotSameOfficeId = visitorLogInfoData?.results?.[0]?.officeId !== Number(departmentManualEntry?.officeId)
+      console.log('visitorISnotSameOfficeId', visitorISnotSameOfficeId)
+      if (visitorISnotSameOfficeId) {
+        setShowModal(true)
+        setModalMessage(`Visitor is not currently in the office premise of this department,${'\n'}Do you want to automatically sign out${'\n'}their previous office location?`);
+        setVisitorDetailSignInDifferentOffice(visitorLogInDetailData?.results?.[0])
+        setVisitorLogSignInDifferentOffice(visitorLogInfoData?.results?.[0])
+        return;
+      }
+
+      console.log('Same Office Visitor:', sameOfficeVisitor)
+      console.log('Visitor In Different Department:', visitorInDifferentDepartment)
+      console.log('Visitor Is Have Dept Log In:', visitorIsHaveDeptLogIn)
+      console.log('Visitor Not Logged Out:', visitorNotLoggedOut)
+
+      // Sign out the visitor if the visitor is in the same office and department and not logged out
+      setShowSignOutModal(true)
+      setCurrentVisitorLogInDetailSignOut(visitorLogInDetailData?.results?.[0])
     } catch (error) {
       console.log(error)
       Alert.alert('Error', 'Failed to process ticket')
@@ -209,6 +268,89 @@ export default function ManualEntryScreen() {
       setIsSubmitting(false)
     }
   }
+
+  const handleYes = async () => {
+    console.log('visitorDetailSignInDifferentOffice', visitorDetailSignInDifferentOffice)
+    console.log('visitorLogSignInDifferentOffice', visitorLogSignInDifferentOffice)
+    try {
+      if (visitorDetailSignInDifferentOffice) {
+        if (visitorDetailSignInDifferentOffice.deptLogOut === null) {
+          // const visitorStrId = visitorLogSignInDifferentOffice?.strId
+          // const dateTimeDeptLogin = visitorDetailSignInDifferentOffice.strDeptLogIn
+          // const now = new Date()
+          // const oneMinuteAgo = subMinutes(now, 1)
+          // const logOut = format(oneMinuteAgo, 'yyyy-MM-dd HH:mm:ss')
+
+
+          // const response = await updateVisitorsLogDetail({
+          //   id: visitorStrId as string,
+          //   dateTime: dateTimeDeptLogin || '',
+          //   sysDeptLogOut: true,
+          //   deptLogOut: logOut,
+          // }).unwrap()
+
+          // console.log('response', response)
+
+          // if (response.ghError === 2001) {
+          //   Toast.show({
+          //     type: 'error',
+          //     text1: 'Visitor Already Logged Out!',
+          //   })
+          //   return;
+          // }
+
+          console.log('test')
+
+        } else {
+          const visitorStrId = visitorLogSignInDifferentOffice?.strId
+          const dateTimeStrLogin = visitorLogSignInDifferentOffice?.strLogIn
+          const payloadToSignOutOffice = {
+            logOut: format(subMinutes(new Date(), 1), 'yyyy-MM-dd HH:mm:ss'),
+            sysLogOut: true,
+            returned: true,
+          }
+          await updateVisitorLog({
+            id: visitorStrId as string,
+            dateTime: dateTimeStrLogin || '',
+            ...payloadToSignOutOffice
+          }).unwrap()
+
+
+          const logDateStr = visitorLogSignInDifferentOffice?.logDate as string;
+          const parsedDate = parse(logDateStr, 'MM/dd/yyyy', new Date());
+          const formattedDate = format(parsedDate, 'yyyy-MM-dd');
+
+
+          // Sign In Office 
+          const PayloadSignInOffice: ICreateVisitorLogPayload = {
+            id: visitorLogSignInDifferentOffice?.id as number,
+            strId: visitorLogSignInDifferentOffice?.strId as string,
+            logIn: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+            logInDate: formattedDate,
+            visitorId: visitorLogSignInDifferentOffice?.visitorId as number,
+            officeId: Number(departmentManualEntry?.officeId),
+            serviceId: visitorLogSignInDifferentOffice?.serviceId as number,
+            returned: false,
+            specService: visitorLogSignInDifferentOffice?.specService as string ?? 'Test',
+            userLogInId: 0,
+          }
+
+          console.log('PayloadSignInOffice', PayloadSignInOffice)
+
+          const response = await createVisitorLog(PayloadSignInOffice).unwrap()
+          console.log('response', response)
+        }
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+
+  const handleCancel = () => {
+    setShowModal(false)
+  }
+
 
 
   return (
@@ -316,6 +458,55 @@ export default function ManualEntryScreen() {
         isLoading={isLoadingUpdateVisitorsLogDetail}
       />
 
+
+      <Modal
+        visible={showModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowModal(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50 px-6">
+          <View className="bg-white rounded-2xl p-8 w-full max-w-sm shadow-lg">
+            {/* Warning Icon */}
+            <View className="items-center mb-6">
+              <View className="w-16 h-16 bg-orange-100 rounded-full items-center justify-center border-2 border-orange-200">
+                <Text className="text-orange-500 text-2xl font-bold">!</Text>
+              </View>
+            </View>
+
+            {/* Title */}
+            <Text className="text-gray-800 text-xl font-semibold text-center mb-4">
+              Visitor
+            </Text>
+
+            {/* Message */}
+            <Text className="text-gray-600 text-base text-center leading-6 mb-8">
+              {modalMessage}
+            </Text>
+
+            {/* Buttons */}
+            <View className="flex-row gap-4">
+              <TouchableOpacity
+                className="flex-1 bg-blue-500 py-3 rounded-lg"
+                onPress={handleYes}
+              >
+                <Text className="text-white text-center font-medium text-base">
+                  Yes
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-1 bg-red-500 py-3 rounded-lg"
+                onPress={handleCancel}
+              >
+                <Text className="text-white text-center font-medium text-base">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 } 

@@ -3,6 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { formattedDate } from "../utils/formattedDate";
 import {
   ICreateVisitorLogDetailPayload,
+  ICreateVisitorLogPayload,
   IVisitorImageResponse,
   IVisitorLogDetailResponse,
   IVisitorLogInfoResponse,
@@ -99,22 +100,58 @@ export const visitorApi = createApi({
       ],
     }),
 
+    createVisitorLog: builder.mutation<
+      { ghError: number; ghMessage: string },
+      ICreateVisitorLogPayload
+    >({
+      query: (payload) => ({
+        url: `/visitor/public/visitor`,
+        method: "POST",
+        body: {
+          log: payload,
+        },
+      }),
+      invalidatesTags: ["VisitorLogInfo"],
+    }),
+
+    updateVisitorLog: builder.mutation({
+      query: ({ id, dateTime, logOut, sysLogOut, returned }) => ({
+        url: `/visitors-log/public/visit-log/${id}/${dateTime}`,
+        method: "PUT",
+        body: {
+          logOut,
+          sysLogOut: sysLogOut,
+          returned: returned,
+          userLogOutId: null,
+        },
+      }),
+      invalidatesTags: ["VisitorLogInfo", "VisitorLogInDetailInfo"],
+    }),
+
     updateVisitorsLogDetail: builder.mutation<
       { ghError: number; ghMessage: string },
       {
         id: string;
         dateTime: string;
-        deptLogOut: string;
-        userDeptLogOutId: number | null;
+        deptLogOut?: string;
+        userDeptLogOutId?: number | null;
+        sysDeptLogOut?: boolean;
       }
     >({
-      query: ({ id, dateTime, deptLogOut, userDeptLogOutId }) => {
+      query: ({
+        id,
+        dateTime,
+        deptLogOut,
+        userDeptLogOutId,
+        sysDeptLogOut,
+      }) => {
         return {
           url: `/visitors-log-detail/public/visit-log-detail/${id}/${dateTime}`,
           method: "PUT",
           body: {
             deptLogOut,
             userDeptLogOutId,
+            sysDeptLogOut,
           },
         };
       },
@@ -132,4 +169,6 @@ export const {
   useLazyVisitorImageQuery,
   useCreateVisitorLogDetailMutation,
   useUpdateVisitorsLogDetailMutation,
+  useUpdateVisitorLogMutation,
+  useCreateVisitorLogMutation,
 } = visitorApi;
