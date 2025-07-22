@@ -154,12 +154,14 @@ const MODAL_MESSAGES = {
 } as const
 
 export default function CameraScreen() {
+  //Redux State
   const { departmentCameraEntry } = useAppSelector((state) => state.departmentCameraEntry)
+  const { ipAddress, port } = useAppSelector((state) => state.config)
+
+  //Ui State
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [scanned, setScanned] = useState(false)
   const [cameraEnabled, setCameraEnabled] = useState(true)
-  const [inputMethod, setInputMethod] = useState<'camera' | 'manual'>('camera')
-  const [ticketId, setTicketId] = useState('')
   const [showVisitorInformationCheckingModal, setShowVisitorInformationCheckingModal] = useState(false)
   const [currentVisitorLog, setCurrentVisitorLog] = useState<VisitorLog | null>(null)
   const [currentVisitorLogInDetailSignOut, setCurrentVisitorLogInDetailSignOut] = useState<VisitorLogDetail | null>(null)
@@ -167,12 +169,13 @@ export default function CameraScreen() {
   const [idVisitorImage, setIdVisitorImage] = useState<string | null>(null)
   const [photoVisitorImage, setPhotoVisitorImage] = useState<string | null>(null)
   const [showSignOutModal, setShowSignOutModal] = useState(false)
-  const { ipAddress, port } = useAppSelector((state) => state.config)
   const [showModal, setShowModal] = useState(false)
   const [modalMessage, setModalMessage] = useState<string>('')
   const [visitorDetailSignInDifferentOffice, setVisitorDetailSignInDifferentOffice] = useState<VisitorLogDetail | null>(null);
   const [visitorLogSignInDifferentOffice, setVisitorLogSignInDifferentOffice] = useState<VisitorLog | null>(null)
 
+
+  // RTK Query Hooks
   const [visitorLogInfo] = useLazyVisitorLogInfoQuery()
   const [visitorLogInDetailInfo] = useLazyVisitorLogInDetailInfoQuery()
   const [visitorImage] = useLazyVisitorImageQuery()
@@ -410,7 +413,6 @@ export default function CameraScreen() {
         visibilityTime: 3000,
       })
       setShowSignOutModal(false)
-      setTicketId('')
       setPurpose('')
     } catch (error) {
       console.log('Sign out error:', error)
@@ -438,7 +440,6 @@ export default function CameraScreen() {
 
 
   const resetForm = useCallback(() => {
-    setTicketId('')
     setPurpose('')
   }, [])
 
@@ -691,7 +692,6 @@ export default function CameraScreen() {
           </View>
         </View>
 
-        {/* Camera View */}
         {cameraEnabled ? (
           <View className="flex-1 relative">
             <CameraView
