@@ -7,6 +7,7 @@ import { useCreateVisitorLogDetailMutation, useLazyVisitorImageQuery, useLazyVis
 import { formattedDateWithTime } from '@/feature/visitor/utils/formattedDate'
 import { useAppSelector } from '@/lib/redux/hooks'
 import { Ionicons } from '@expo/vector-icons'
+import { useNavigation } from '@react-navigation/native'
 import { Camera, CameraView } from 'expo-camera'
 import { router } from 'expo-router'
 import React, { useEffect, useRef, useState } from 'react'
@@ -213,6 +214,8 @@ export default function CameraScreen() {
   const [visitorLogInDetailInfo] = useLazyVisitorLogInDetailInfoQuery();
   const [visitorImage] = useLazyVisitorImageQuery();
 
+  const navigation = useNavigation();
+
   useEffect(() => {
     const checkingConfig = async () => {
       if (!ipAddress || ipAddress === '' || !port || port === 0) {
@@ -227,7 +230,23 @@ export default function CameraScreen() {
     }
     getCameraPermissions()
     checkingConfig()
-  }, [ipAddress, port])
+
+    // Handle navigation focus/blur events to manage camera state
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      setCameraEnabled(true);
+    });
+
+    const unsubscribeBlur = navigation.addListener('blur', () => {
+      setCameraEnabled(false);
+    });
+
+    // Cleanup function to disable camera when component unmounts
+    return () => {
+      setCameraEnabled(false);
+      unsubscribeFocus();
+      unsubscribeBlur();
+    };
+  }, [ipAddress, port, navigation])
 
   const handleChangePurpose = (purpose: string) => {
     setPurpose(purpose)
@@ -476,7 +495,7 @@ export default function CameraScreen() {
         </View>
 
         {/* Camera View */}
-        {cameraEnabled && (
+        {cameraEnabled ? (
           <View className="flex-1 relative">
             <CameraView
               onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
@@ -503,6 +522,10 @@ export default function CameraScreen() {
                 )}
               </View>
             </View>
+          </View>
+        ) : (
+          <View className="flex-1 justify-center items-center">
+            <Text className="text-gray-600">Camera is disabled</Text>
           </View>
         )}
       </View>

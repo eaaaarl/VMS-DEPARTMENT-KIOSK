@@ -333,7 +333,7 @@ export default function ManualEntryScreen() {
     try {
       // If visitor is Sign In the Department Office have now a Visitor log detail
       if (visitorDetailSignInDifferentOffice) {
-        
+
         // Sign out from previous office
         if (visitorDetailSignInDifferentOffice.deptLogOut !== null) {
           const visitorStrId = visitorLogSignInDifferentOffice?.strId
@@ -476,7 +476,7 @@ export default function ManualEntryScreen() {
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
 
-      {/* Modals */}
+
       <VisitorInformationModal
         visible={showVisitorInformationCheckingModal}
         onClose={handleCloseVisitorInformationCheckingModal}

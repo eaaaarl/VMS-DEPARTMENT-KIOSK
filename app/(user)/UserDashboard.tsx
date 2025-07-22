@@ -1,6 +1,6 @@
 import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi';
 import { Department } from '@/feature/department/api/interface';
-import { useAppDispatch } from '@/lib/redux/hooks';
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { setDepartmentCameraEntry } from '@/lib/redux/state/departmentCameraEntrySlice';
 import { setDepartmentManualEntry } from '@/lib/redux/state/departmentManualEntrySlice';
 import { router } from 'expo-router';
@@ -19,8 +19,16 @@ export default function Dashboard() {
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
+  //Redux State
+  const { ipAddress, port } = useAppSelector((state) => state.config)
+
   // RTK Query
-  const { data: departmentData, isLoading: isLoadingDepartmentData, isError: isErrorDepartmentData, refetch: refetchDepartmentData } = useGetAllDepartmentQuery();
+  const {
+    data: departmentData,
+    isLoading: isLoadingDepartmentData,
+    isError: isErrorDepartmentData,
+    refetch: refetchDepartmentData
+  } = useGetAllDepartmentQuery();
 
   // Memo
   const checkingIfHaveDepartment = useMemo(() => {
@@ -30,6 +38,14 @@ export default function Dashboard() {
     return true;
   }, [selectedDepartment]);
 
+  const checkingConfig = useMemo(() => {
+    if (!ipAddress || ipAddress === '' || !port || port === 0) {
+      return false;
+    }
+    return true;
+  }, [ipAddress, port]);
+
+  // Effect
   useEffect(() => {
     if (isNavigating) return;
 
@@ -43,7 +59,13 @@ export default function Dashboard() {
       router.replace('/(error)/error-screen');
     }
 
-  }, [checkingIfHaveDepartment, isNavigating, isErrorDepartmentData])
+    if (!checkingConfig) {
+      setIsNavigating(true);
+      router.replace('/(developer)/DeveloperSetting')
+      return
+    }
+
+  }, [checkingIfHaveDepartment, isNavigating, isErrorDepartmentData, checkingConfig, router])
 
   // Handlers
   const handleCameraScan = () => {
