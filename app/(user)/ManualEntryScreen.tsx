@@ -1,7 +1,7 @@
 import SignOutModal from '@/feature/user/components/SignOutModal'
 import VisitorInformationModal from '@/feature/user/components/VisitorInformationModal'
-import { ICreateVisitorLogDetailPayload, ICreateVisitorLogPayload, VisitorLog, VisitorLogDetail } from '@/feature/visitor/api/inteface'
-import { useCreateVisitorLogDetailMutation, useCreateVisitorLogMutation, useLazyVisitorImageQuery, useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery, useUpdateVisitorLogMutation, useUpdateVisitorsLogDetailMutation } from '@/feature/visitor/api/visitorApi'
+import { ICreateVisitorLogDetailPayload, ICreateVisitorLogPayload, IVisitorSignOutPayload, VisitorLog, VisitorLogDetail } from '@/feature/visitor/api/inteface'
+import { useCreateVisitorLogDetailMutation, useCreateVisitorLogDuplicatePhotoMutation, useCreateVisitorLogMutation, useLazyVisitorImageQuery, useLazyVisitorLogInDetailInfoQuery, useLazyVisitorLogInfoQuery, useSignOutVisitorLogDetailMutation, useUpdateVisitorLogMutation, useUpdateVisitorsLogDetailMutation } from '@/feature/visitor/api/visitorApi'
 import { formattedDateWithTime } from '@/feature/visitor/utils/formattedDate'
 import { useAppSelector } from '@/lib/redux/hooks'
 import { Ionicons } from '@expo/vector-icons'
@@ -31,6 +31,7 @@ const ERROR_CODES = {
 
 const MODAL_MESSAGES = {
   DIFFERENT_OFFICE: `Visitor is not currently in the office premise of this department,\nDo you want to automatically sign out\ntheir previous office location?`,
+  DIFFERENT_DEPARTMENT: `Visitor is in office premise but not in this department,\nDo you want to automatically sign out\ntheir previous department location?`
 } as const
 
 export default function ManualEntryScreen() {
@@ -50,12 +51,16 @@ export default function ManualEntryScreen() {
   const [photoVisitorImage, setPhotoVisitorImage] = useState<string | null>(null)
   const [visitorDetailSignInDifferentOffice, setVisitorDetailSignInDifferentOffice] = useState<VisitorLogDetail | null>(null)
   const [visitorLogSignInDifferentOffice, setVisitorLogSignInDifferentOffice] = useState<VisitorLog | null>(null)
+  const [visitorLogSignInDifferenrDepartment, setVisitorLogSignInDifferenrDepartment] = useState<VisitorLog | null>(null)
+  const [visitorDetailSignInDifferentDepartment, setVisitorDetailSignInDifferentDepartment] = useState<VisitorLogDetail | null>(null)
 
   // Modal State
   const [showVisitorInformationCheckingModal, setShowVisitorInformationCheckingModal] = useState(false)
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [modalMessage, setModalMessage] = useState<string>('')
+  const [showModalDifferentDept, setShowModalDifferentDept] = useState<boolean>(false);
+  const [modalMessageDifferentDept, setModalMessageDifferentDept] = useState<string>('')
 
   // RTK Query Hooks
   const [visitorLogInfo] = useLazyVisitorLogInfoQuery()
@@ -65,6 +70,8 @@ export default function ManualEntryScreen() {
   const [updateVisitorsLogDetail, { isLoading: isLoadingUpdateVisitorsLogDetail }] = useUpdateVisitorsLogDetailMutation()
   const [updateVisitorLog, { isLoading: isLoadingUpdateVisitorLog }] = useUpdateVisitorLogMutation()
   const [createVisitorLog, { isLoading: isLoadingCreateVisitorLog }] = useCreateVisitorLogMutation()
+  const [signOutVisitor, { isLoading: isLoadingSignOutVisitor }] = useSignOutVisitorLogDetailMutation()
+  const [createDuplicatePhotoVisitor, { isLoading: isLoadingCreateDuplicatePhotoVisitor }] = useCreateVisitorLogDuplicatePhotoMutation()
 
   // Effects
   useEffect(() => {
@@ -265,11 +272,24 @@ export default function ManualEntryScreen() {
     await fetchVisitorImages(visitorLogData.results[0].strLogIn)
   }, [fetchVisitorImages])
 
+  const handleDifferentOfficeVisitorLog = useCallback(async (visitorLogData: VisitorLog) => {
+    setShowVisitorInformationCheckingModal(true)
+    setCurrentVisitorLog(visitorLogData)
+    await fetchVisitorImages(visitorLogData.strLogIn)
+  }, [fetchVisitorImages])
+
   const handleDifferentOfficeVisitor = useCallback((visitorLogData: any, visitorDetailData: any) => {
     setShowModal(true)
     setModalMessage(MODAL_MESSAGES.DIFFERENT_OFFICE)
     setVisitorDetailSignInDifferentOffice(visitorDetailData.results[0])
     setVisitorLogSignInDifferentOffice(visitorLogData.results[0])
+  }, [])
+
+  const handleDifferentDepartmentVisitor = useCallback((visitorLogData: any, visitorDetailData: any) => {
+    setShowModalDifferentDept(true);
+    setModalMessageDifferentDept(MODAL_MESSAGES.DIFFERENT_DEPARTMENT)
+    setVisitorLogSignInDifferenrDepartment(visitorLogData)
+    setVisitorDetailSignInDifferentDepartment(visitorDetailData)
   }, [])
 
   const handleSignOutVisitor = useCallback((visitorDetailData: any) => {
@@ -280,7 +300,6 @@ export default function ManualEntryScreen() {
 
   const handleTicketChecking = useCallback(async () => {
     if (!validateTicketId(ticketId)) return
-
     setIsSubmitting(true)
     try {
       const visitorLogInfoData = await visitorLogInfo({ strId: ticketId }).unwrap()
@@ -293,9 +312,18 @@ export default function ManualEntryScreen() {
       // Business logic
       const sameOfficeVisitor = visitorLogInfoData.results[0].officeId === Number(departmentManualEntry?.officeId)
       const visitorNotLoggedOut = visitorLogInDetailData?.results?.length === 0 || visitorLogInDetailData?.results?.[0]?.deptLogOut !== null
+      const visitorDifferentDeparment = visitorLogInDetailData?.results?.[0].deptId !== departmentManualEntry?.id;
 
       // Handle different scenarios
       if (sameOfficeVisitor && visitorNotLoggedOut) {
+
+
+        // Visitor DifferentDepartment
+        if (visitorDifferentDeparment) {
+          handleDifferentDepartmentVisitor(visitorLogInfoData, visitorLogInDetailData)
+          return
+        }
+
         await handleSameOfficeVisitor(visitorLogInfoData)
         return
       }
@@ -305,6 +333,7 @@ export default function ManualEntryScreen() {
         handleDifferentOfficeVisitor(visitorLogInfoData, visitorLogInDetailData)
         return
       }
+
 
       // Default case: sign out visitor
       handleSignOutVisitor(visitorLogInDetailData)
@@ -333,11 +362,11 @@ export default function ManualEntryScreen() {
     try {
       // If visitor is Sign In the Department Office have now a Visitor log detail
       if (visitorDetailSignInDifferentOffice) {
-
         // Sign out from previous office
         if (visitorDetailSignInDifferentOffice.deptLogOut !== null) {
           const visitorStrId = visitorLogSignInDifferentOffice?.strId
           const dateTimeStrLogin = visitorLogSignInDifferentOffice?.strLogIn
+
           const payloadToSignOutOffice = {
             logOut: format(subMinutes(new Date(), 1), 'yyyy-MM-dd HH:mm:ss'),
             sysLogOut: true,
@@ -365,16 +394,130 @@ export default function ManualEntryScreen() {
             officeId: Number(departmentManualEntry?.officeId),
             serviceId: visitorLogSignInDifferentOffice?.serviceId as number,
             returned: false,
-            specService: visitorLogSignInDifferentOffice?.specService as string ?? 'Test',
+            specService: visitorLogSignInDifferentOffice?.specService as string ?? '',
             userLogInId: 0,
           }
 
-          await createVisitorLog(PayloadSignInOffice).unwrap()
-          showSuccessToast('Visitor transferred successfully')
+          const newfileName = PayloadSignInOffice.logIn.replace(' ', '_').replace(':', "-") + '.png';
+          const fileName = format(visitorLogSignInDifferentOffice?.strLogIn as string, 'yyyy-MM-dd HH:mm:ss').replace(" ", "_").replace(":", "-") + '.png';
+          await createDuplicatePhotoVisitor({ filename: fileName, newFilename: newfileName })
+
+          const response = await createVisitorLog(PayloadSignInOffice).unwrap()
+          // showSuccessToast('Visitor transferred successfully')
+          if (response.ghMessage) {
+            setShowModal(false)
+            resetForm()
+          }
+          handleDifferentOfficeVisitorLog(visitorLogSignInDifferentOffice as VisitorLog)
+          console.log('This will trigger because the visitor is sign out in the previous office, but the visitor will sign in different office')
+          return;
+        }
+
+        // visitorDetailSignInDifferentOffice.deptLogOut === null
+        // If the Visitor Is Sign in in the Office in previous office it is not sign out
+
+        console.log('This is will trigger because the visitor is not sign out in the previous office, but the visitor will sign different office')
+        const dateTimeDeptLogin = visitorDetailSignInDifferentOffice.strDeptLogIn
+        const visitorStrId = visitorDetailSignInDifferentOffice.strId
+
+        await updateVisitorsLogDetail({
+          id: visitorStrId,
+          dateTime: dateTimeDeptLogin,
+          deptLogOut: formattedDateWithTime(new Date()),
+          userDeptLogOutId: null,
+        }).unwrap()
+
+
+        const payloadToSignOutOffice = {
+          logOut: format(subMinutes(new Date(), 1), 'yyyy-MM-dd HH:mm:ss'),
+          sysLogOut: true,
+          returned: true,
+        }
+
+        await updateVisitorLog({
+          id: visitorStrId as string,
+          dateTime: visitorLogSignInDifferentOffice?.strLogIn || '',
+          ...payloadToSignOutOffice
+        }).unwrap()
+
+        const logDateStr = visitorLogSignInDifferentOffice?.logDate as string
+        const parsedDate = parse(logDateStr, 'MM/dd/yyyy', new Date())
+        const formattedDate = format(parsedDate, 'yyyy-MM-dd')
+
+        const PayloadSignInOffice = {
+          id: visitorLogSignInDifferentOffice?.id as number,
+          strId: visitorLogSignInDifferentOffice?.strId as string,
+          logIn: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+          logInDate: formattedDate,
+          visitorId: visitorLogSignInDifferentOffice?.visitorId as number,
+          officeId: Number(departmentManualEntry?.officeId),
+          serviceId: visitorLogSignInDifferentOffice?.serviceId as number,
+          returned: false,
+          specService: visitorLogSignInDifferentOffice?.specService as string ?? '',
+          userLogInId: 0,
+        }
+
+        const newfileName = PayloadSignInOffice.logIn.replace(' ', '_').replace(':', "-") + '.png';
+        const fileName = format(visitorLogSignInDifferentOffice?.strLogIn as string, 'yyyy-MM-dd HH:mm:ss').replace(" ", "_").replace(":", "-") + '.png';
+        await createDuplicatePhotoVisitor({ filename: fileName, newFilename: newfileName })
+
+        const response = await createVisitorLog(PayloadSignInOffice).unwrap()
+        // showSuccessToast('Visitor transferred successfully')
+        if (response.ghMessage) {
           setShowModal(false)
           resetForm()
         }
+
+        handleDifferentOfficeVisitorLog(visitorLogSignInDifferentOffice as VisitorLog)
+        return;
       }
+
+      // If visitor is signing directly to the different office
+      console.log('This is will trigger because the visitor is sign in different office')
+      const visitorLog = visitorLogSignInDifferentOffice;
+      const signOutPayloadDirect: IVisitorSignOutPayload = {
+        deptLogOut: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+        sysDeptLogOut: true
+      }
+
+
+      // Sign Out direct visitor
+      await signOutVisitor({
+        payload: signOutPayloadDirect,
+        dateTime: visitorLog?.strLogIn as string,
+        strId: visitorLog?.strId as string
+      })
+
+      // Sign In visitor again
+      const logDateStr = visitorLogSignInDifferentOffice?.logDate as string
+      const parsedDate = parse(logDateStr, 'MM/dd/yyyy', new Date())
+      const formattedDate = format(parsedDate, 'yyyy-MM-dd')
+
+      const payloadSignIn: ICreateVisitorLogPayload = {
+        id: visitorLogSignInDifferentOffice?.id as number,
+        strId: visitorLogSignInDifferentOffice?.strId as string,
+        logIn: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+        logInDate: formattedDate,
+        visitorId: visitorLogSignInDifferentOffice?.visitorId as number,
+        officeId: Number(departmentManualEntry?.officeId),
+        serviceId: visitorLogSignInDifferentOffice?.serviceId as number,
+        returned: false,
+        specService: visitorLogSignInDifferentOffice?.specService as string ?? '',
+        userLogInId: 0,
+      }
+
+      const newfileName = payloadSignIn.logIn.replace(' ', '_').replace(':', "-") + '.png';
+      const fileName = format(visitorLogSignInDifferentOffice?.strLogIn as string, 'yyyy-MM-dd HH:mm:ss').replace(" ", "_").replace(":", "-") + '.png';
+      await createDuplicatePhotoVisitor({ filename: fileName, newFilename: newfileName })
+
+      const response = await createVisitorLog(payloadSignIn).unwrap()
+      // showSuccessToast('Visitor transferred successfully')
+      if (response.ghMessage) {
+        setShowModal(false)
+        resetForm()
+      }
+
+      handleDifferentOfficeVisitorLog(visitorLogSignInDifferentOffice as VisitorLog)
     } catch (error) {
       console.log('Error handling different office visitor:', error)
       showErrorToast('Failed to transfer visitor')
@@ -387,11 +530,21 @@ export default function ManualEntryScreen() {
     departmentManualEntry,
     showSuccessToast,
     showErrorToast,
-    resetForm
+    resetForm,
+    handleDifferentOfficeVisitorLog,
+    setShowModal
   ])
 
   const handleCancel = useCallback(() => {
     setShowModal(false)
+  }, [])
+
+  const handleYesDifferentDepartment = useCallback(() => {
+    Alert.alert('TEST', 'This is a test message if the visitor have different department')
+  }, [])
+
+  const handleCancelDifferentDepartment = useCallback(() => {
+    setShowModalDifferentDept(false)
   }, [])
 
   return (
@@ -532,6 +685,51 @@ export default function ManualEntryScreen() {
               <TouchableOpacity
                 className="flex-1 bg-red-500 py-3 rounded-lg"
                 onPress={handleCancel}
+              >
+                <Text className="text-white text-center font-medium text-base">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showModalDifferentDept}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowModalDifferentDept(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50 px-6">
+          <View className="bg-white rounded-2xl p-8 w-full max-w-sm shadow-lg">
+            <View className="items-center mb-6">
+              <View className="w-16 h-16 bg-orange-100 rounded-full items-center justify-center border-2 border-orange-200">
+                <Text className="text-orange-500 text-2xl font-bold">!</Text>
+              </View>
+            </View>
+
+            <Text className="text-gray-800 text-xl font-semibold text-center mb-4">
+              Visitor
+            </Text>
+
+            <Text className="text-gray-600 text-base text-center leading-6 mb-8">
+              {modalMessageDifferentDept}
+            </Text>
+
+            <View className="flex-row gap-4">
+              <TouchableOpacity
+                className="flex-1 bg-blue-500 py-3 rounded-lg"
+                onPress={handleYesDifferentDepartment}
+              >
+                <Text className="text-white text-center font-medium text-base">
+                  Yes
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-1 bg-red-500 py-3 rounded-lg"
+                onPress={handleCancelDifferentDepartment}
               >
                 <Text className="text-white text-center font-medium text-base">
                   Cancel
