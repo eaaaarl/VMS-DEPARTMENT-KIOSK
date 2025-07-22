@@ -15,15 +15,12 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Dimensions,
   Text,
   TouchableOpacity,
   View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
 // QR Overlay Component
 const QRCodeOverlay = ({ scanned }: { scanned: boolean }) => {

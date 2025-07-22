@@ -318,12 +318,13 @@ export default function ManualEntryScreen() {
       if (sameOfficeVisitor && visitorNotLoggedOut) {
 
 
-        // Visitor DifferentDepartment
-        if (visitorDifferentDeparment) {
+        // Visitor Different Department
+        /* if (visitorDifferentDeparment) {
           handleDifferentDepartmentVisitor(visitorLogInfoData, visitorLogInDetailData)
           return
-        }
+        } */
 
+        // Vistor is same office and not logged out
         await handleSameOfficeVisitor(visitorLogInfoData)
         return
       }
@@ -358,7 +359,7 @@ export default function ManualEntryScreen() {
 
 
   // Modal for Visitor that is sign in different office
-  const handleYes = useCallback(async () => {
+  const HandleYesDifferentOffice = useCallback(async () => {
     try {
       // If visitor is Sign In the Department Office have now a Visitor log detail
       if (visitorDetailSignInDifferentOffice) {
@@ -535,7 +536,7 @@ export default function ManualEntryScreen() {
     setShowModal
   ])
 
-  const handleCancel = useCallback(() => {
+  const handleCancelDIfferentOffice = useCallback(() => {
     setShowModal(false)
   }, [])
 
@@ -639,7 +640,12 @@ export default function ManualEntryScreen() {
         purpose={purpose}
         handleChangePurpose={handleChangePurpose}
         onSubmitVisitorLog={handleSubmitVisitorLog}
-        isLoading={isLoadingCreateVisitorLogDetail}
+        isLoading={
+          isLoadingCreateVisitorLogDetail ||
+          isLoadingCreateDuplicatePhotoVisitor ||
+          isLoadingUpdateVisitorLog ||
+          isLoadingCreateVisitorLog
+        }
       />
 
       <SignOutModal
@@ -647,7 +653,7 @@ export default function ManualEntryScreen() {
         onClose={() => setShowSignOutModal(false)}
         onConfirm={handleSignOut}
         ticketId={currentVisitorLogInDetailSignOut?.strId || ''}
-        isLoading={isLoadingUpdateVisitorsLogDetail}
+        isLoading={isLoadingUpdateVisitorsLogDetail || isLoadingSignOutVisitor}
       />
 
       <Modal
@@ -675,7 +681,7 @@ export default function ManualEntryScreen() {
             <View className="flex-row gap-4">
               <TouchableOpacity
                 className="flex-1 bg-blue-500 py-3 rounded-lg"
-                onPress={handleYes}
+                onPress={HandleYesDifferentOffice}
               >
                 <Text className="text-white text-center font-medium text-base">
                   Yes
@@ -684,7 +690,7 @@ export default function ManualEntryScreen() {
 
               <TouchableOpacity
                 className="flex-1 bg-red-500 py-3 rounded-lg"
-                onPress={handleCancel}
+                onPress={handleCancelDIfferentOffice}
               >
                 <Text className="text-white text-center font-medium text-base">
                   Cancel
