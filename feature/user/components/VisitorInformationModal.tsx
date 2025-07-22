@@ -1,3 +1,4 @@
+import { useGetLabelMessageQuery } from '@/feature/label/api/labelApi';
 import { VisitorLog } from '@/feature/visitor/api/inteface';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,11 +26,25 @@ interface VisitorInformationModalProps {
   onSubmitVisitorLog: () => void,
   idVisitorImage?: string | null,
   photoVisitorImage?: string | null,
-  isLoading?: boolean
+  isLoading?: boolean,
 }
 
-const VisitorInformationModal = ({ visible, onClose, currentVisitorLog, purpose, handleChangePurpose, onSubmitVisitorLog, idVisitorImage, photoVisitorImage, isLoading }: VisitorInformationModalProps) => {
+const VisitorInformationModal = ({
+  visible,
+  onClose,
+  currentVisitorLog,
+  purpose,
+  handleChangePurpose,
+  onSubmitVisitorLog,
+  idVisitorImage,
+  photoVisitorImage,
+  isLoading,
+}: VisitorInformationModalProps) => {
   const { ipAddress, port } = useAppSelector((state) => state.config)
+
+  const { data: labelMessageData } = useGetLabelMessageQuery()
+  const faceViewLabel = labelMessageData?.find(fbl => fbl.SectionName === 'General' && fbl.KeyName === 'Face View Label')?.Value
+  const idViewLabel = labelMessageData?.find(ivl => ivl.SectionName === 'General' && ivl.KeyName === 'ID View Label')?.Value
 
   return (
     <Modal
@@ -58,7 +73,7 @@ const VisitorInformationModal = ({ visible, onClose, currentVisitorLog, purpose,
               {/* Photo Placeholders */}
               <View className="flex-row p-4 gap-3">
                 <View className="flex-1">
-                  <Text className="text-sm font-semibold mb-2 text-gray-800">ID Photo</Text>
+                  <Text className="text-sm font-semibold mb-2 text-gray-800">{idViewLabel}</Text>
                   <View className="h-28 bg-gray-100 rounded-lg justify-center items-center relative border-2 border-red-500 overflow-hidden">
                     {idVisitorImage ? (
                       <Image
@@ -86,7 +101,7 @@ const VisitorInformationModal = ({ visible, onClose, currentVisitorLog, purpose,
                 </View>
 
                 <View className="flex-1">
-                  <Text className="text-sm font-semibold mb-2 text-gray-800">Face Photo</Text>
+                  <Text className="text-sm font-semibold mb-2 text-gray-800">{faceViewLabel}</Text>
                   <View className="h-28 bg-gray-100 rounded-lg justify-center items-center relative border-2 border-orange-400 overflow-hidden">
                     {photoVisitorImage ? (
                       <Image

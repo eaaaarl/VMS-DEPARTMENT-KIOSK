@@ -100,3 +100,18 @@ export interface ICreateVisitorLogPayload {
   returned: boolean;
   userLogInId: number | null;
 }
+
+export interface ICreateVisitorLogDuplicatePhoto {
+  filename: string;
+  newFilename: string;
+}
+
+export interface VisitorApiResponse {
+  ghError: number;
+  ghMessage: string;
+}
+
+export interface IVisitorSignOutPayload {
+  deptLogOut: string;
+  sysDeptLogOut: boolean;
+}

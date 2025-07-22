@@ -1,77 +1,47 @@
+import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React, { useEffect, useState } from 'react'
-import { Animated, Text, TouchableOpacity, View } from 'react-native'
+import React from 'react'
+import { Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 export default function ErrorScreen({ route }: { route: { params: { errorType: string, retryAction: () => void } } }) {
-  const [fadeAnim] = useState(new Animated.Value(0))
-  const [pulseAnim] = useState(new Animated.Value(1))
-
   // Get error type from route params, default to 'connection'
   const errorType = route?.params?.errorType || 'connection'
   const retryAction = route?.params?.retryAction
-
-  useEffect(() => {
-    // Fade in animation
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start()
-
-    // Pulse animation for icon
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    )
-    pulseLoop.start()
-
-    return () => pulseLoop.stop()
-  }, [])
 
   const getErrorConfig = () => {
     switch (errorType) {
       case 'server':
         return {
-          icon: '🔧',
+          icon: 'construct-outline' as const,
           title: 'Server Error',
           message: 'Our servers are experiencing issues. Please try again in a few moments.',
           actionText: 'Retry'
         }
       case 'timeout':
         return {
-          icon: '⏰',
+          icon: 'time-outline' as const,
           title: 'Request Timeout',
           message: 'The request took too long to complete. Please check your connection and try again.',
           actionText: 'Try Again'
         }
       case 'network':
         return {
-          icon: '📡',
+          icon: 'wifi-outline' as const,
           title: 'Network Error',
           message: 'Unable to connect to our servers. Please check your internet connection.',
           actionText: 'Retry'
         }
       case 'api':
         return {
-          icon: '⚠️',
+          icon: 'warning-outline' as const,
           title: 'API Error',
           message: 'Something went wrong with the service. Our team has been notified.',
           actionText: 'Try Again'
         }
       default: // connection
         return {
-          icon: '🌐',
+          icon: 'globe-outline' as const,
           title: 'Connection Problem',
           message: 'Unable to connect to the internet. Please check your network settings and try again.',
           actionText: 'Retry Connection'
@@ -100,19 +70,13 @@ export default function ErrorScreen({ route }: { route: { params: { errorType: s
 
   return (
     <SafeAreaView className='flex-1 bg-gray-50'>
-      <Animated.View
-        style={{ opacity: fadeAnim }}
-        className='flex-1 items-center justify-center px-6'
-      >
+      <View className='flex-1 items-center justify-center px-6'>
         {/* Error Icon */}
-        <Animated.View
-          style={{ transform: [{ scale: pulseAnim }] }}
-          className='mb-8'
-        >
+        <View className='mb-8'>
           <View className='w-24 h-24 bg-red-100 rounded-full items-center justify-center mb-4'>
-            <Text className='text-4xl'>{errorConfig.icon}</Text>
+            <Ionicons name={errorConfig.icon} size={48} color="#dc2626" />
           </View>
-        </Animated.View>
+        </View>
 
         {/* Error Content */}
         <View className='items-center mb-12'>
@@ -156,7 +120,7 @@ export default function ErrorScreen({ route }: { route: { params: { errorType: s
             If the problem persists, please contact support
           </Text>
         </View>
-      </Animated.View>
+      </View>
     </SafeAreaView>
   )
 }

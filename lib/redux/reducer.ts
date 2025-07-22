@@ -1,4 +1,5 @@
 import { departmentApi } from "@/feature/department/api/deparmentApi";
+import { labelApi } from "@/feature/label/api/labelApi";
 import { visitorApi } from "@/feature/visitor/api/visitorApi";
 import { combineReducers } from "@reduxjs/toolkit";
 import { configReducer } from "./state/configSlice";
@@ -18,9 +19,10 @@ const rootReducer = combineReducers({
   // RTK Query
   [departmentApi.reducerPath]: departmentApi.reducer,
   [visitorApi.reducerPath]: visitorApi.reducer,
+  [labelApi.reducerPath]: labelApi.reducer,
 });
 
-export const apis = [departmentApi, visitorApi];
+export const apis = [departmentApi, visitorApi, labelApi];
 
 export const apisReducerPath = apis.map((api) => api.reducerPath);
 

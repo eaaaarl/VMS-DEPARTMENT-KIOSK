@@ -39,9 +39,9 @@ export default function ModeSelection() {
         dispatch(setLayoutMode(mode))
         // Navigate to appropriate screen after selection
         if (mode === 'Kiosk') {
-            router.push('/(main)')
+            router.push('/(main)/VisitorDashboard')
         } else if (mode === 'User') {
-            router.push('/(user)/Dashboard')
+            router.push('/(user)/UserDashboard')
         }
     }
 

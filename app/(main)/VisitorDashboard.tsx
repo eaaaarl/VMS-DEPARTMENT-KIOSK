@@ -54,7 +54,7 @@ export default function Index() {
 
     if (LayoutMode === null) {
       setIsNavigating(true);
-      router.replace('/(mode)/mode');
+      router.replace('/(mode)');
       return;
     }
 

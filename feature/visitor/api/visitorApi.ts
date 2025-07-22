@@ -3,10 +3,13 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { formattedDate } from "../utils/formattedDate";
 import {
   ICreateVisitorLogDetailPayload,
+  ICreateVisitorLogDuplicatePhoto,
   ICreateVisitorLogPayload,
   IVisitorImageResponse,
   IVisitorLogDetailResponse,
   IVisitorLogInfoResponse,
+  IVisitorSignOutPayload,
+  VisitorApiResponse,
 } from "./inteface";
 
 export const visitorApi = createApi({
@@ -105,7 +108,7 @@ export const visitorApi = createApi({
       ICreateVisitorLogPayload
     >({
       query: (payload) => ({
-        url: `/visitor/public/visitor`,
+        url: `/visitors-log/public/visit-log`,
         method: "POST",
         body: {
           log: payload,
@@ -157,6 +160,29 @@ export const visitorApi = createApi({
       },
       invalidatesTags: ["VisitorLogInfo", "VisitorLogInDetailInfo"],
     }),
+
+    createVisitorLogDuplicatePhoto: builder.mutation<
+      { ghError: number; ghMessage: string },
+      ICreateVisitorLogDuplicatePhoto
+    >({
+      query: (payload) => ({
+        url: `/visitors-log/public/photo-duplicate`,
+        method: "POST",
+        body: payload,
+      }),
+    }),
+
+    signOutVisitorLogDetail: builder.mutation<
+      VisitorApiResponse,
+      { strId: string; dateTime: string; payload: IVisitorSignOutPayload }
+    >({
+      query: ({ dateTime, payload, strId }) => ({
+        url: `/visitors-log-detail/public/visit-log-detail/${strId}/${dateTime}`,
+        method: "PUT",
+        body: payload,
+      }),
+      invalidatesTags: ["VisitorLogDetail"],
+    }),
   }),
 });
 
@@ -171,4 +197,6 @@ export const {
   useUpdateVisitorsLogDetailMutation,
   useUpdateVisitorLogMutation,
   useCreateVisitorLogMutation,
+  useCreateVisitorLogDuplicatePhotoMutation,
+  useSignOutVisitorLogDetailMutation,
 } = visitorApi;
