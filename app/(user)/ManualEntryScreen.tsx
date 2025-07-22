@@ -51,16 +51,12 @@ export default function ManualEntryScreen() {
   const [photoVisitorImage, setPhotoVisitorImage] = useState<string | null>(null)
   const [visitorDetailSignInDifferentOffice, setVisitorDetailSignInDifferentOffice] = useState<VisitorLogDetail | null>(null)
   const [visitorLogSignInDifferentOffice, setVisitorLogSignInDifferentOffice] = useState<VisitorLog | null>(null)
-  const [visitorLogSignInDifferenrDepartment, setVisitorLogSignInDifferenrDepartment] = useState<VisitorLog | null>(null)
-  const [visitorDetailSignInDifferentDepartment, setVisitorDetailSignInDifferentDepartment] = useState<VisitorLogDetail | null>(null)
 
   // Modal State
   const [showVisitorInformationCheckingModal, setShowVisitorInformationCheckingModal] = useState(false)
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [modalMessage, setModalMessage] = useState<string>('')
-  const [showModalDifferentDept, setShowModalDifferentDept] = useState<boolean>(false);
-  const [modalMessageDifferentDept, setModalMessageDifferentDept] = useState<string>('')
 
   // RTK Query Hooks
   const [visitorLogInfo] = useLazyVisitorLogInfoQuery()
@@ -212,7 +208,6 @@ export default function ManualEntryScreen() {
           }
         }
       }
-
       const response = await createVisitorLogDetail(payload).unwrap()
       showSuccessToast(response.ghMessage)
       handleCloseVisitorInformationCheckingModal()
@@ -246,7 +241,7 @@ export default function ManualEntryScreen() {
       const response = await updateVisitorsLogDetail({
         id: visitorStrId,
         dateTime: dateTimeDeptLogin,
-        deptLogOut: formattedDateWithTime(new Date()),
+        deptLogOut: format(subMinutes(new Date(), 2), 'yyyy-MM-dd HH:mm:ss'),
         userDeptLogOutId: null,
       }).unwrap()
 
@@ -285,13 +280,6 @@ export default function ManualEntryScreen() {
     setVisitorLogSignInDifferentOffice(visitorLogData.results[0])
   }, [])
 
-  const handleDifferentDepartmentVisitor = useCallback((visitorLogData: any, visitorDetailData: any) => {
-    setShowModalDifferentDept(true);
-    setModalMessageDifferentDept(MODAL_MESSAGES.DIFFERENT_DEPARTMENT)
-    setVisitorLogSignInDifferenrDepartment(visitorLogData)
-    setVisitorDetailSignInDifferentDepartment(visitorDetailData)
-  }, [])
-
   const handleSignOutVisitor = useCallback((visitorDetailData: any) => {
     setShowSignOutModal(true)
     setCurrentVisitorLogInDetailSignOut(visitorDetailData.results[0])
@@ -312,18 +300,10 @@ export default function ManualEntryScreen() {
       // Business logic
       const sameOfficeVisitor = visitorLogInfoData.results[0].officeId === Number(departmentManualEntry?.officeId)
       const visitorNotLoggedOut = visitorLogInDetailData?.results?.length === 0 || visitorLogInDetailData?.results?.[0]?.deptLogOut !== null
-      const visitorDifferentDeparment = visitorLogInDetailData?.results?.[0].deptId !== departmentManualEntry?.id;
+      // const visitorDifferentDeparment = visitorLogInDetailData?.results?.[0].deptId !== departmentManualEntry?.id;
 
       // Handle different scenarios
       if (sameOfficeVisitor && visitorNotLoggedOut) {
-
-
-        // Visitor Different Department
-        /* if (visitorDifferentDeparment) {
-          handleDifferentDepartmentVisitor(visitorLogInfoData, visitorLogInDetailData)
-          return
-        } */
-
         // Vistor is same office and not logged out
         await handleSameOfficeVisitor(visitorLogInfoData)
         return
@@ -424,13 +404,13 @@ export default function ManualEntryScreen() {
         await updateVisitorsLogDetail({
           id: visitorStrId,
           dateTime: dateTimeDeptLogin,
-          deptLogOut: formattedDateWithTime(new Date()),
+          deptLogOut: format(subMinutes(new Date(), 2), 'yyyy-MM-dd HH:mm:ss'),
           userDeptLogOutId: null,
         }).unwrap()
 
 
         const payloadToSignOutOffice = {
-          logOut: format(subMinutes(new Date(), 1), 'yyyy-MM-dd HH:mm:ss'),
+          logOut: format(subMinutes(new Date(), 2), 'yyyy-MM-dd HH:mm:ss'),
           sysLogOut: true,
           returned: true,
         }
@@ -477,7 +457,7 @@ export default function ManualEntryScreen() {
       console.log('This is will trigger because the visitor is sign in different office')
       const visitorLog = visitorLogSignInDifferentOffice;
       const signOutPayloadDirect: IVisitorSignOutPayload = {
-        deptLogOut: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+        deptLogOut: format(subMinutes(new Date(), 2), 'yyyy-MM-dd HH:mm:ss'),
         sysDeptLogOut: true
       }
 
@@ -538,14 +518,6 @@ export default function ManualEntryScreen() {
 
   const handleCancelDIfferentOffice = useCallback(() => {
     setShowModal(false)
-  }, [])
-
-  const handleYesDifferentDepartment = useCallback(() => {
-    Alert.alert('TEST', 'This is a test message if the visitor have different department')
-  }, [])
-
-  const handleCancelDifferentDepartment = useCallback(() => {
-    setShowModalDifferentDept(false)
   }, [])
 
   return (
@@ -691,51 +663,6 @@ export default function ManualEntryScreen() {
               <TouchableOpacity
                 className="flex-1 bg-red-500 py-3 rounded-lg"
                 onPress={handleCancelDIfferentOffice}
-              >
-                <Text className="text-white text-center font-medium text-base">
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={showModalDifferentDept}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowModalDifferentDept(false)}
-      >
-        <View className="flex-1 justify-center items-center bg-black/50 px-6">
-          <View className="bg-white rounded-2xl p-8 w-full max-w-sm shadow-lg">
-            <View className="items-center mb-6">
-              <View className="w-16 h-16 bg-orange-100 rounded-full items-center justify-center border-2 border-orange-200">
-                <Text className="text-orange-500 text-2xl font-bold">!</Text>
-              </View>
-            </View>
-
-            <Text className="text-gray-800 text-xl font-semibold text-center mb-4">
-              Visitor
-            </Text>
-
-            <Text className="text-gray-600 text-base text-center leading-6 mb-8">
-              {modalMessageDifferentDept}
-            </Text>
-
-            <View className="flex-row gap-4">
-              <TouchableOpacity
-                className="flex-1 bg-blue-500 py-3 rounded-lg"
-                onPress={handleYesDifferentDepartment}
-              >
-                <Text className="text-white text-center font-medium text-base">
-                  Yes
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="flex-1 bg-red-500 py-3 rounded-lg"
-                onPress={handleCancelDifferentDepartment}
               >
                 <Text className="text-white text-center font-medium text-base">
                   Cancel
