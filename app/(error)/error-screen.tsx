@@ -37,7 +37,7 @@ export default function ErrorScreen({ route }: { route: { params: { errorType: s
     pulseLoop.start()
 
     return () => pulseLoop.stop()
-  }, [])
+  }, [fadeAnim, pulseAnim])
 
   const getErrorConfig = () => {
     switch (errorType) {
