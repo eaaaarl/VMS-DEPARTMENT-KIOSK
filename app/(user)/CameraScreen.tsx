@@ -8,11 +8,10 @@ import { useNavigation } from '@react-navigation/native'
 import { format, parse, subMinutes } from 'date-fns'
 import { BarcodeScanningResult, Camera, CameraView } from 'expo-camera'
 import { router } from 'expo-router'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
-  Animated,
   Modal,
   Text,
   TouchableOpacity,
@@ -23,164 +22,126 @@ import Toast from 'react-native-toast-message'
 
 // QR Overlay Component
 const QRCodeOverlay = ({ scanned }: { scanned: boolean }) => {
-  const animatedValue = useRef(new Animated.Value(0)).current
-
-  useEffect(() => {
-    if (!scanned) {
-      const animation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(animatedValue, {
-            toValue: 1,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(animatedValue, {
-            toValue: 0,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-        ])
-      )
-      animation.start()
-      return () => animation.stop()
-    }
-  }, [scanned, animatedValue])
-
-  const scanLinePosition = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 200], // Adjust based on your overlay size
-  })
+  // Size of the scanning frame
+  const frameSize = 250
 
   return (
-    <View style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      justifyContent: 'center',
-      alignItems: 'center',
-    }}>
-      {/* Semi-transparent overlay */}
-      <View style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      }} />
+    <View className="absolute inset-0 justify-center items-center">
 
-      {/* Scanning area cutout */}
+
+      {/* Scanning frame with corner borders only */}
       <View style={{
-        width: 250,
-        height: 250,
+        width: frameSize,
+        height: frameSize,
         position: 'relative',
+        borderRadius: 24,
       }}>
-        {/* Transparent center */}
+        {/* Corner indicators - Google Lens style */}
+        {/* Top Left */}
         <View style={{
           position: 'absolute',
           top: 0,
           left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          borderColor: 'transparent',
-        }} />
-
-        {/* Corner indicators */}
-        {/* Top Left */}
-        <View style={{
-          position: 'absolute',
-          top: -2,
-          left: -2,
-          width: 30,
-          height: 30,
+          width: 40,
+          height: 40,
           borderTopWidth: 4,
           borderLeftWidth: 4,
-          borderColor: '#3B82F6',
-          borderTopLeftRadius: 8,
+          borderColor: '#4CAF50',
+          borderTopLeftRadius: 16,
         }} />
 
         {/* Top Right */}
         <View style={{
           position: 'absolute',
-          top: -2,
-          right: -2,
-          width: 30,
-          height: 30,
+          top: 0,
+          right: 0,
+          width: 40,
+          height: 40,
           borderTopWidth: 4,
           borderRightWidth: 4,
-          borderColor: '#3B82F6',
-          borderTopRightRadius: 8,
+          borderColor: '#4285F4',
+          borderTopRightRadius: 16,
         }} />
 
         {/* Bottom Left */}
         <View style={{
           position: 'absolute',
-          bottom: -2,
-          left: -2,
-          width: 30,
-          height: 30,
+          bottom: 0,
+          left: 0,
+          width: 40,
+          height: 40,
           borderBottomWidth: 4,
           borderLeftWidth: 4,
-          borderColor: '#3B82F6',
-          borderBottomLeftRadius: 8,
+          borderColor: '#FBBC05',
+          borderBottomLeftRadius: 16,
         }} />
 
         {/* Bottom Right */}
         <View style={{
           position: 'absolute',
-          bottom: -2,
-          right: -2,
-          width: 30,
-          height: 30,
+          bottom: 0,
+          right: 0,
+          width: 40,
+          height: 40,
           borderBottomWidth: 4,
           borderRightWidth: 4,
-          borderColor: '#3B82F6',
-          borderBottomRightRadius: 8,
+          borderColor: '#EA4335',
+          borderBottomRightRadius: 16,
         }} />
 
-        {/* Scanning line animation */}
-        {!scanned && (
-          <Animated.View style={{
+        {/* Center focus point when scanned */}
+        {scanned && (
+          <View style={{
             position: 'absolute',
-            left: 0,
-            right: 0,
-            height: 2,
-            backgroundColor: '#3B82F6',
-            transform: [{ translateY: scanLinePosition }],
-            shadowColor: '#3B82F6',
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.8,
-            shadowRadius: 4,
-            elevation: 5,
-          }} />
+            top: '50%',
+            left: '50%',
+            width: 24,
+            height: 24,
+            marginLeft: -12,
+            marginTop: -12,
+            borderRadius: 12,
+            backgroundColor: 'rgba(76, 175, 80, 0.3)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            <View style={{
+              width: 12,
+              height: 12,
+              borderRadius: 6,
+              backgroundColor: '#4CAF50',
+            }} />
+          </View>
         )}
       </View>
 
       {/* Instructions */}
       <View style={{
         position: 'absolute',
-        bottom: 150,
+        bottom: 120,
         left: 20,
         right: 20,
         alignItems: 'center',
       }}>
         <View style={{
           backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          paddingHorizontal: 20,
-          paddingVertical: 12,
-          borderRadius: 20,
+          paddingHorizontal: 24,
+          paddingVertical: 14,
+          borderRadius: 24,
+          flexDirection: 'row',
+          alignItems: 'center',
         }}>
+          {scanned ? (
+            <ActivityIndicator size="small" color="#4CAF50" style={{ marginRight: 10 }} />
+          ) : (
+            <Ionicons name="qr-code" size={20} color="#4CAF50" style={{ marginRight: 10 }} />
+          )}
           <Text style={{
             color: 'white',
             fontSize: 16,
             fontWeight: '500',
             textAlign: 'center',
           }}>
-            {scanned ? 'Processing...' : 'Position QR code within the frame'}
+            {scanned ? 'Processing QR code...' : 'Position QR code within the frame'}
           </Text>
         </View>
       </View>
