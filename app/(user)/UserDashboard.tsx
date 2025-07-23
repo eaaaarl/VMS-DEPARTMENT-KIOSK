@@ -150,15 +150,28 @@ export default function Dashboard() {
 
         <View className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <TapDetector onMultiTap={handleDepartmentChange} tapCount={5} showToast={true} />
-          <View className="flex-row items-center gap-2 mb-2">
-            <Text className="text-blue-600 text-xl font-bold">
-              {selectedDepartment?.name || ''}
-            </Text>
+          <Text className="text-gray-700 font-medium mb-3">Current Location</Text>
+          <View className="flex-row items-center gap-3 mb-3">
+            <View className="bg-blue-100 rounded-full p-2">
+              <Text className="text-blue-600 text-lg">🏢</Text>
+            </View>
+            <View>
+              <Text className="text-gray-600 text-sm">Department Name:</Text>
+              <Text className="text-blue-600 text-xl font-bold">
+                {selectedDepartment?.name || 'Not Selected'}
+              </Text>
+            </View>
           </View>
-          <View className="flex-row items-center gap-2 mb-2">
-            <Text className="text-gray-500 mt-1">
-              {selectedDepartment?.officeName || ''}
-            </Text>
+          <View className="flex-row items-center gap-3 mb-1">
+            <View className="bg-blue-100 rounded-full p-2">
+              <Text className="text-blue-600 text-lg">📍</Text>
+            </View>
+            <View>
+              <Text className="text-gray-600 text-sm">Office Name:</Text>
+              <Text className="text-gray-700 font-medium">
+                {selectedDepartment?.officeName || 'Not Selected'}
+              </Text>
+            </View>
           </View>
         </View>
 
