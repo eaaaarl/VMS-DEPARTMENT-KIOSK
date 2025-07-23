@@ -20,6 +20,8 @@ const persistConfig = {
     "department",
     "departmentManualEntry", // Blacklist for not persist
     "departmentCameraEntry", // Blacklist for not persist
+    "visitorDepartmentSignInEntry",
+    "visitorDepartmentSignOutEntry",
     ...apisReducerPath,
   ],
 };

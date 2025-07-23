@@ -1,21 +1,27 @@
 import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi';
 import { Department } from '@/feature/department/api/interface';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
-import { setSelectedDepartment } from '@/lib/redux/state/departmentSlice';
+import { setVisitorDepartmentSignInEntry } from '@/lib/redux/state/VisitorDepartmentSignInEntrySlice';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function Index() {
+  // Redux
   const dispatch = useAppDispatch()
+
+  // Redux State
   const { ipAddress, port } = useAppSelector((state) => state.config);
   const { LayoutMode } = useAppSelector((state) => state.mode);
-  const { currentDepartment } = useAppSelector((state) => state.department);
-  const [isNavigating, setIsNavigating] = useState(false);
-  const { data: departmentData, isLoading: isLoadingDepartment, isError } = useGetAllDepartmentQuery();
-  const [showDepartmentModal, setShowDepartmentModal] = useState(false);
 
+  // UI State
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+  const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
+
+  // RTK Query Hooks
+  const { data: departmentData, isLoading: isLoadingDepartment, isError } = useGetAllDepartmentQuery();
 
   const checkingConfig = useMemo(() => {
     if (!ipAddress || ipAddress === '' || !port || port === 0) {
@@ -68,32 +74,18 @@ export default function Index() {
     }
   }, [checkingIfHaveDepartment, isNavigating]);
 
-  const handleSignIn = useCallback(() => {
-    if (!currentDepartment) {
-      setShowDepartmentModal(true);
-      return;
-    }
-    router.push(`/(visitor)/SignIn?officeId=${currentDepartment.officeId}`);
-  }, [currentDepartment]);
-
-  const handleSignOut = useCallback(() => {
-    if (!currentDepartment) {
-      setShowDepartmentModal(true);
-      return;
-    }
-
-    router.push({
-      pathname: '/(visitor)/SignOut',
-      params: { department: currentDepartment.id.toString() }
-    });
-  }, [currentDepartment]);
 
   const handleDepartmentChange = useCallback(() => {
     setShowDepartmentModal(true);
   }, []);
 
   const handleDepartmentSelect = (dept: Department) => {
-    dispatch(setSelectedDepartment(dept))
+    setCurrentDepartment(prev => {
+      if (prev && prev.id === dept.id) {
+        return null;
+      }
+      return dept;
+    });
   };
 
 
@@ -108,8 +100,6 @@ export default function Index() {
 
   return (
     <View className="flex-1 bg-blue-50">
-      <StatusBar barStyle="light-content" backgroundColor="#3B82F6" />
-
       <View className="pt-16 pb-8 px-6">
         <Text className="text-gray-600 text-lg font-medium text-center mb-2">
           Welcome to
@@ -146,45 +136,30 @@ export default function Index() {
 
       <View className="flex-1 px-6 py-8">
         <View className="bg-white rounded-3xl shadow-lg p-8 mx-2">
-          <View className="flex-row justify-between items-center">
-            <TouchableOpacity
-              onPress={handleSignIn}
-              className="flex-1 mr-4"
-              activeOpacity={0.8}
-            >
-              <View className="items-center">
-                <View className="w-20 h-20 bg-blue-100 rounded-2xl items-center justify-center mb-4 shadow-sm">
-                  <Ionicons name="log-in" size={32} color="#3B82F6" />
-                </View>
-                <Text className="text-gray-800 text-xl font-bold mb-2">
-                  SIGN IN
-                </Text>
-                <Text className="text-gray-600 text-sm text-center">
-                  Register and Sign In
-                </Text>
+          <TouchableOpacity
+            onPress={() => {
+              if (!currentDepartment) {
+                setShowDepartmentModal(true);
+                return;
+              }
+              dispatch(setVisitorDepartmentSignInEntry(currentDepartment));
+              router.push(`/(visitor)/VisitorCameraScreen`);
+            }}
+            className="w-full"
+            activeOpacity={0.8}
+          >
+            <View className="items-center">
+              <View className="w-24 h-24 bg-blue-100 rounded-2xl items-center justify-center mb-4 shadow-sm">
+                <Ionicons name="qr-code-outline" size={40} color="#3B82F6" />
               </View>
-            </TouchableOpacity>
-
-            <View className="w-px h-24 bg-gray-300 mx-4" />
-
-            <TouchableOpacity
-              onPress={handleSignOut}
-              className="flex-1 ml-4"
-              activeOpacity={0.8}
-            >
-              <View className="items-center">
-                <View className="w-20 h-20 bg-green-100 rounded-2xl items-center justify-center mb-4 shadow-sm">
-                  <Ionicons name="log-out" size={32} color="#10B981" />
-                </View>
-                <Text className="text-gray-800 text-xl font-bold mb-2">
-                  SIGN OUT
-                </Text>
-                <Text className="text-gray-600 text-sm text-center">
-                  Sign Out Properly
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+              <Text className="text-gray-800 text-xl font-bold mb-2">
+                SCAN QR CODE
+              </Text>
+              <Text className="text-gray-600 text-sm text-center">
+                Scan visitor QR code to sign in or sign out
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
 

@@ -7,6 +7,7 @@ import { departmentCameraEntryReducer } from "./state/departmentCameraEntrySlice
 import { departmentManualEntryReducer } from "./state/departmentManualEntrySlice";
 import { departmentReducer } from "./state/departmentSlice";
 import { modeReducer } from "./state/modeSlice";
+import { VisitorDepartmentSignInEntryReducer } from "./state/VisitorDepartmentSignInEntrySlice";
 
 const rootReducer = combineReducers({
   // UI State
@@ -15,6 +16,8 @@ const rootReducer = combineReducers({
   department: departmentReducer,
   departmentManualEntry: departmentManualEntryReducer,
   departmentCameraEntry: departmentCameraEntryReducer,
+  visitorDepartmentSignInEntry: VisitorDepartmentSignInEntryReducer,
+  visitorDepartmentSignOutEntry: VisitorDepartmentSignInEntryReducer,
 
   // RTK Query
   [departmentApi.reducerPath]: departmentApi.reducer,
