@@ -5,7 +5,6 @@ import { combineReducers } from "@reduxjs/toolkit";
 import { configReducer } from "./state/configSlice";
 import { departmentCameraEntryReducer } from "./state/departmentCameraEntrySlice";
 import { departmentManualEntryReducer } from "./state/departmentManualEntrySlice";
-import { departmentReducer } from "./state/departmentSlice";
 import { modeReducer } from "./state/modeSlice";
 import { VisitorDepartmentSignInEntryReducer } from "./state/visitorDepartmentEntry";
 
@@ -13,7 +12,6 @@ const rootReducer = combineReducers({
   // UI State
   config: configReducer,
   mode: modeReducer,
-  department: departmentReducer,
   departmentManualEntry: departmentManualEntryReducer,
   departmentCameraEntry: departmentCameraEntryReducer,
   visitorDepartmentEntry: VisitorDepartmentSignInEntryReducer,
