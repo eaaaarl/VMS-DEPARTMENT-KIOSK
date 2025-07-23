@@ -59,7 +59,6 @@ interface UseVisitorManagementReturn {
 export const MODAL_MESSAGES = {
   DIFFERENT_OFFICE: `Visitor is not currently in the office premise of this department,\nDo you want to automatically sign out\ntheir previous office location?`,
 };
-
 export const useVisitorManagement = (
   departmentCameraEntry: DepartmentCameraEntry | null
 ): UseVisitorManagementReturn => {

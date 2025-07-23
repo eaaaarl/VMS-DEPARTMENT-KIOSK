@@ -1,11 +1,12 @@
 import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi';
 import { Department } from '@/feature/department/api/interface';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
-import { setVisitorDepartmentSignInEntry } from '@/lib/redux/state/VisitorDepartmentSignInEntrySlice';
+import { setVisitorDepartmentEntry } from '@/lib/redux/state/visitorDepartmentEntry';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Index() {
   // Redux
@@ -99,7 +100,7 @@ export default function Index() {
   }
 
   return (
-    <View className="flex-1 bg-blue-50">
+    <SafeAreaView className="flex-1 bg-blue-50">
       <View className="pt-16 pb-8 px-6">
         <Text className="text-gray-600 text-lg font-medium text-center mb-2">
           Welcome to
@@ -142,7 +143,7 @@ export default function Index() {
                 setShowDepartmentModal(true);
                 return;
               }
-              dispatch(setVisitorDepartmentSignInEntry(currentDepartment));
+              dispatch(setVisitorDepartmentEntry(currentDepartment));
               router.push(`/(visitor)/VisitorCameraScreen`);
             }}
             className="w-full"
@@ -244,6 +245,6 @@ export default function Index() {
           </View>
         </View>
       </Modal>
-    </View >
+    </SafeAreaView>
   );
 }

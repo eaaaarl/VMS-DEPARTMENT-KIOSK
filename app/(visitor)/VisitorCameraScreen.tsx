@@ -15,7 +15,7 @@ import {
   useUpdateVisitorsLogDetailMutation,
 } from '@/feature/visitor/api/visitorApi';
 import { useAppSelector } from '@/lib/redux/hooks';
-import { Ionicons } from '@expo/vector-icons';
+import { AntDesign, Ionicons } from '@expo/vector-icons';
 import { format, parse } from 'date-fns';
 import { BarcodeScanningResult, Camera, CameraView } from 'expo-camera';
 import { router } from 'expo-router';
@@ -36,7 +36,7 @@ export default function VisitorCameraScreen() {
 
 
   // Redux State
-  const { VisitorDepartmentSignInEntry } = useAppSelector((state) => state.visitorDepartmentSignInEntry)
+  const { VisitorDepartmentEntry } = useAppSelector((state) => state.visitorDepartmentEntry)
 
   // Visitor information checking modal state
   const [
@@ -89,7 +89,7 @@ export default function VisitorCameraScreen() {
   ] = useCreateVisitorLogDuplicatePhotoMutation();
 
 
-  // Request camera permissions on mount
+  // Request camera permissions on mount and handle cleanup
   useEffect(() => {
     const getCameraPermissions = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
@@ -97,6 +97,11 @@ export default function VisitorCameraScreen() {
     };
 
     getCameraPermissions();
+
+    // Cleanup function to disable camera when component unmounts
+    return () => {
+      setCameraEnabled(false);
+    };
   }, []);
 
   const validatePurpose = useCallback((purposeText: string): boolean => {
@@ -120,6 +125,7 @@ export default function VisitorCameraScreen() {
     setIdVisitorImage(null);
     setPhotoVisitorImage(null);
     setPurpose("");
+    // Keep camera disabled until user explicitly re-enables it
   }, []);
 
   const checkVisitorData = useCallback((visitorData: any) => {
@@ -207,7 +213,7 @@ export default function VisitorCameraScreen() {
 
         const sameOfficeVisitor =
           visitorLog?.results[0].officeId ===
-          Number(VisitorDepartmentSignInEntry?.officeId);
+          Number(VisitorDepartmentEntry?.officeId);
         const visitorNotLoggedOut =
           visitorLogDetail?.results?.length === 0 ||
           visitorLogDetail?.results?.[0]?.deptLogOut !== null;
@@ -220,7 +226,7 @@ export default function VisitorCameraScreen() {
 
         const visitorISnotSameOfficeId =
           visitorLog?.results[0].officeId !==
-          Number(VisitorDepartmentSignInEntry?.officeId);
+          Number(VisitorDepartmentEntry?.officeId);
         if (visitorISnotSameOfficeId) {
           handleDifferentOfficeVisitor(visitorLog, visitorLogDetail);
           return;
@@ -235,7 +241,7 @@ export default function VisitorCameraScreen() {
     [
       checkVisitorData,
       checkVisitorLoggedOut,
-      VisitorDepartmentSignInEntry,
+      VisitorDepartmentEntry,
       handleSameOfficeVisitor,
       handleDifferentOfficeVisitor,
       handleSignOutVisitor,
@@ -259,7 +265,7 @@ export default function VisitorCameraScreen() {
             ),
             deptLogIn: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
             visitorId: currentVisitorLog?.visitorId as number,
-            deptId: VisitorDepartmentSignInEntry?.id as number,
+            deptId: VisitorDepartmentEntry?.id as number,
             reason: purpose,
             userDeptLogInId: null,
           },
@@ -276,6 +282,12 @@ export default function VisitorCameraScreen() {
       });
       handleCloseVisitorInformationCheckingModal();
       setPurpose("");
+
+      // Re-enable camera after successful submission for next scan
+      setTimeout(() => {
+        setScanned(false);
+        setCameraEnabled(true);
+      }, 1000); // Small delay to ensure modal is closed first
     } catch (error) {
       console.log("Error submitting visitor log:", error);
       Toast.show({
@@ -289,7 +301,7 @@ export default function VisitorCameraScreen() {
   }, [
     validatePurpose,
     currentVisitorLog,
-    VisitorDepartmentSignInEntry,
+    VisitorDepartmentEntry,
     createVisitorLogDetail,
     handleCloseVisitorInformationCheckingModal,
     setPurpose,
@@ -332,6 +344,12 @@ export default function VisitorCameraScreen() {
       });
       setShowSignOutModal(false);
       setPurpose("");
+
+      // Re-enable camera after successful sign out for next scan
+      setTimeout(() => {
+        setScanned(false);
+        setCameraEnabled(true);
+      }, 1000); // Small delay to ensure modal is closed first
     } catch (error) {
       console.log("Sign out error:", error);
       Toast.show({
@@ -449,7 +467,7 @@ export default function VisitorCameraScreen() {
       const formattedDate = parseAndFormatLogDate(visitorData.logDate);
       const signInPayload = createSignInPayload(
         visitorData,
-        VisitorDepartmentSignInEntry?.officeId as number,
+        VisitorDepartmentEntry?.officeId as number,
         formattedDate
       );
 
@@ -458,7 +476,7 @@ export default function VisitorCameraScreen() {
       const response = await createVisitorLog(signInPayload).unwrap();
       return response;
     },
-    [VisitorDepartmentSignInEntry?.officeId, duplicateVisitorPhoto, createVisitorLog]
+    [VisitorDepartmentEntry?.officeId, duplicateVisitorPhoto, createVisitorLog]
   );
 
   const handleVisitorAlreadyLoggedOut = useCallback(async () => {
@@ -573,6 +591,12 @@ export default function VisitorCameraScreen() {
         // Direct office-to-office transfer
         await handleDirectOfficeTransfer();
       }
+
+      // Re-enable camera after successful operation
+      setTimeout(() => {
+        setScanned(false);
+        setCameraEnabled(true);
+      }, 1000); // Small delay to ensure modal is closed first
     } catch (error) {
       console.log("Error handling different office visitor:", error);
       showErrorToast("Failed to transfer visitor");
@@ -592,6 +616,10 @@ export default function VisitorCameraScreen() {
   const handleBarCodeScanned = useCallback(
     async ({ data: scannedTicket }: BarcodeScanningResult) => {
       try {
+        // Set scanned to true and disable camera immediately after scan
+        setScanned(true);
+        setCameraEnabled(false);
+
         const { data: visitorLog } = await visitorLogInfo({
           strId: scannedTicket,
         });
@@ -599,12 +627,20 @@ export default function VisitorCameraScreen() {
           strId: scannedTicket,
         });
 
-        if (!checkVisitorData(visitorLog)) return;
-        if (checkVisitorLoggedOut(visitorLog)) return;
+        if (!checkVisitorData(visitorLog)) {
+          // Re-enable camera if data validation fails
+          setCameraEnabled(true);
+          return;
+        }
+        if (checkVisitorLoggedOut(visitorLog)) {
+          // Re-enable camera if visitor is already logged out
+          setCameraEnabled(true);
+          return;
+        }
 
         const sameOfficeVisitor =
           visitorLog?.results[0].officeId ===
-          Number(VisitorDepartmentSignInEntry?.officeId);
+          Number(VisitorDepartmentEntry?.officeId);
         const visitorNotLoggedOut =
           visitorLogDetail?.results?.length === 0 ||
           visitorLogDetail?.results?.[0]?.deptLogOut !== null;
@@ -617,7 +653,7 @@ export default function VisitorCameraScreen() {
 
         const visitorISnotSameOfficeId =
           visitorLog?.results[0].officeId !==
-          Number(VisitorDepartmentSignInEntry?.officeId);
+          Number(VisitorDepartmentEntry?.officeId);
         if (visitorISnotSameOfficeId) {
           handleDifferentOfficeVisitor(visitorLog, visitorLogDetail);
           return;
@@ -627,12 +663,14 @@ export default function VisitorCameraScreen() {
       } catch (error) {
         console.log("Error checking ticket:", error);
         Alert.alert("Error", "Failed to process ticket");
+        // Re-enable camera on error
+        setCameraEnabled(true);
       }
     },
     [
       checkVisitorData,
       checkVisitorLoggedOut,
-      VisitorDepartmentSignInEntry,
+      VisitorDepartmentEntry,
       handleSameOfficeVisitor,
       handleDifferentOfficeVisitor,
       handleSignOutVisitor,
@@ -644,6 +682,7 @@ export default function VisitorCameraScreen() {
   // Reset scanner state
   const resetScanner = useCallback(() => {
     setScanned(false);
+    setCameraEnabled(true);
   }, []);
 
   if (hasPermission === null) {
@@ -704,6 +743,7 @@ export default function VisitorCameraScreen() {
         <View className="flex-1 relative">
           {cameraEnabled ? (
             <>
+              {/* Only mount CameraView when cameraEnabled is true */}
               <CameraView
                 onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
                 barcodeScannerSettings={{
@@ -732,12 +772,22 @@ export default function VisitorCameraScreen() {
             </>
           ) : (
             <View className="flex-1 justify-center items-center">
-              <Text className="text-gray-600">Camera is disabled</Text>
+              <AntDesign name="camera" size={24} color="black" />
+              <Text className="text-gray-600 mt-4 mb-2 text-lg">Camera is disabled</Text>
+              <Text className="text-gray-500 text-center mb-6 px-8">
+                {scanned ? "QR code has been scanned successfully." : "Camera is currently turned off."}
+              </Text>
               <TouchableOpacity
-                onPress={() => setCameraEnabled(true)}
-                className="mt-4 bg-blue-600 px-6 py-3 rounded-lg"
+                onPress={() => {
+                  setCameraEnabled(true);
+                  setScanned(false);
+                }}
+                className="mt-4 bg-blue-600 px-6 py-3 rounded-lg flex-row items-center"
               >
-                <Text className="text-white font-semibold">Enable Camera</Text>
+                <Ionicons name="scan" size={20} color="white" />
+                <Text className="text-white font-semibold ml-2">
+                  {scanned ? "Scan Another Code" : "Enable Camera"}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -748,7 +798,11 @@ export default function VisitorCameraScreen() {
         visible={showVisitorInformationCheckingModal}
         onClose={() => {
           handleCloseVisitorInformationCheckingModal();
-          resetScanner(); // Reset scanner when modal is closed
+          // Re-enable camera when modal is closed without submission
+          setTimeout(() => {
+            setScanned(false);
+            setCameraEnabled(true);
+          }, 500);
         }}
         currentVisitorLog={currentVisitorLog}
         idVisitorImage={idVisitorImage}
@@ -769,11 +823,15 @@ export default function VisitorCameraScreen() {
         visible={showSignOutModal}
         onClose={() => {
           setShowSignOutModal(false);
-          resetScanner(); // Reset scanner when modal is closed
+          // Re-enable camera when modal is closed without sign out
+          setTimeout(() => {
+            setScanned(false);
+            setCameraEnabled(true);
+          }, 500);
         }}
         onConfirm={() => {
           handleSignOut();
-          // Scanner will be reset when modal closes via the useEffect
+          // Camera will be re-enabled in handleSignOut after success
         }}
         ticketId={currentVisitorLogInDetailSignOut?.strId || ''}
         isLoading={
@@ -787,11 +845,15 @@ export default function VisitorCameraScreen() {
         visible={showModal}
         onClose={() => {
           handleCancelDifferentOffice();
-          resetScanner(); // Reset scanner when modal is closed
+          // Re-enable camera when modal is closed without confirmation
+          setTimeout(() => {
+            setScanned(false);
+            setCameraEnabled(true);
+          }, 500);
         }}
         onConfirm={() => {
           handleYesDifferentOffice();
-          // Scanner will be reset when modal closes via the useEffect
+          // Camera will be re-enabled in handleYesDifferentOffice after success
         }}
         message={modalMessage}
       />
