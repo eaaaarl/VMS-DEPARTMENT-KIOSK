@@ -25,7 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 export const MODAL_MESSAGES = {
-  DIFFERENT_OFFICE: `Visitor is not currently in the office premise of this department,\nDo you want to automatically sign out\ntheir previous office location?`,
+  DIFFERENT_OFFICE: `You are not currently signed in to this department.\nWould you like to automatically sign out\nfrom your previous location?`,
 };
 
 export default function VisitorCameraScreen() {
@@ -726,7 +726,7 @@ export default function VisitorCameraScreen() {
           <TouchableOpacity onPress={() => router.back()} className="p-2">
             <Ionicons name="arrow-back" size={24} color="#374151" />
           </TouchableOpacity>
-          <Text className="text-lg font-semibold text-gray-800">Visitor Sign In</Text>
+          <Text className="text-lg font-semibold text-gray-800">Visitor Sign In/Out</Text>
           <TouchableOpacity
             onPress={() => setCameraEnabled(!cameraEnabled)}
             className="p-2"
