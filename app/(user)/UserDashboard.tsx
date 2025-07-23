@@ -37,7 +37,7 @@ export default function Dashboard() {
       return false;
     }
     return true;
-  }, [selectedDepartment]);
+  }, [selectedDepartment, isLoadingDepartmentData, departmentData]);
 
   const checkingConfig = useMemo(() => {
     if (!ipAddress || ipAddress === '' || !port || port === 0) {
@@ -49,11 +49,6 @@ export default function Dashboard() {
   // Effect
   useEffect(() => {
     if (isNavigating) return;
-
-    if (!checkingIfHaveDepartment) {
-      setShowDepartmentModal(true)
-      return
-    }
 
     if (isErrorDepartmentData) {
       setIsNavigating(true);
@@ -67,7 +62,16 @@ export default function Dashboard() {
       return
     }
 
-  }, [checkingIfHaveDepartment, isNavigating, isErrorDepartmentData, checkingConfig])
+  }, [isNavigating, isErrorDepartmentData, checkingConfig])
+
+  useEffect(() => {
+    if (isNavigating) return;
+
+    if (!checkingIfHaveDepartment) {
+      setShowDepartmentModal(true);
+      return;
+    }
+  }, [checkingIfHaveDepartment, isNavigating]);
 
   // Handlers
   const handleCameraScan = () => {
@@ -146,15 +150,28 @@ export default function Dashboard() {
 
         <View className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <TapDetector onMultiTap={handleDepartmentChange} tapCount={5} showToast={true} />
-          <View className="flex-row items-center gap-2 mb-2">
-            <Text className="text-blue-600 text-xl font-bold">
-              {selectedDepartment?.name || 'Refresh To Select Department'}
-            </Text>
+          <Text className="text-gray-700 font-medium mb-3">Current Location</Text>
+          <View className="flex-row items-center gap-3 mb-3">
+            <View className="bg-blue-100 rounded-full p-2">
+              <Text className="text-blue-600 text-lg">🏢</Text>
+            </View>
+            <View>
+              <Text className="text-gray-600 text-sm">Department Name:</Text>
+              <Text className="text-blue-600 text-xl font-bold">
+                {selectedDepartment?.name || 'Not Selected'}
+              </Text>
+            </View>
           </View>
-          <View className="flex-row items-center gap-2 mb-2">
-            <Text className="text-gray-500 mt-1">
-              {selectedDepartment?.officeName || ''}
-            </Text>
+          <View className="flex-row items-center gap-3 mb-1">
+            <View className="bg-blue-100 rounded-full p-2">
+              <Text className="text-blue-600 text-lg">📍</Text>
+            </View>
+            <View>
+              <Text className="text-gray-600 text-sm">Office Name:</Text>
+              <Text className="text-gray-700 font-medium">
+                {selectedDepartment?.officeName || 'Not Selected'}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -242,7 +259,6 @@ export default function Dashboard() {
                       key={dept.id}
                       onPress={() => {
                         setSelectedDepartment(dept);
-                        setIsNavigating(false);
                       }}
                       activeOpacity={0.2}
                     >
@@ -272,7 +288,6 @@ export default function Dashboard() {
                 onPress={() => {
                   if (selectedDepartment) {
                     setShowDepartmentModal(false);
-                    setIsNavigating(false);
                   }
                 }}
                 disabled={!selectedDepartment}

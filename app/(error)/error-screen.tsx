@@ -14,7 +14,7 @@ interface ErrorScreenProps {
   }
 }
 
-export const ErrorScreen: React.FC<ErrorScreenProps> = ({ route }) => {
+const ErrorScreen: React.FC<ErrorScreenProps> = ({ route }) => {
   const { errorConfig, handleRetry, handleGoHome } = useErrorScreen(route?.params)
 
   return (
@@ -32,3 +32,5 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({ route }) => {
     </SafeAreaView>
   )
 }
+
+export default ErrorScreen

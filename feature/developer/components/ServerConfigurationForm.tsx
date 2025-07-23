@@ -36,12 +36,12 @@ export default function ServerConfigurationForm({
           value={ipAddress}
           onChangeText={onIpAddressChange}
           placeholder="Enter IP address (e.g., 192.168.1.100)"
-          className={`w-full px-4 py-3 border rounded-lg bg-gray-50 text-base ${
-            errors.ipAddress ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-3 border rounded-lg bg-gray-50 text-base ${errors.ipAddress ? 'border-red-500' : 'border-gray-300'
+            }`}
           keyboardType="numeric"
           autoCapitalize="none"
           autoCorrect={false}
+          placeholderTextColor={'gray'}
         />
         {errors.ipAddress && (
           <Text className="text-red-500 text-sm mt-1">{errors.ipAddress}</Text>
@@ -57,12 +57,12 @@ export default function ServerConfigurationForm({
           value={port}
           onChangeText={onPortChange}
           placeholder="Enter port (e.g., 3000)"
-          className={`w-full px-4 py-3 border rounded-lg bg-gray-50 text-base ${
-            errors.port ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-3 border rounded-lg bg-gray-50 text-base ${errors.port ? 'border-red-500' : 'border-gray-300'
+            }`}
           keyboardType="numeric"
           autoCapitalize="none"
           autoCorrect={false}
+          placeholderTextColor={'gray'}
         />
         {errors.port && (
           <Text className="text-red-500 text-sm mt-1">{errors.port}</Text>
