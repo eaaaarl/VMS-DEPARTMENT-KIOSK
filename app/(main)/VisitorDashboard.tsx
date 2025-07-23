@@ -75,6 +75,7 @@ export default function Index() {
 
     if (!checkingIfHaveDepartment) {
       setShowDepartmentModal(true);
+      return;
     }
   }, [checkingIfHaveDepartment, isNavigating]);
 

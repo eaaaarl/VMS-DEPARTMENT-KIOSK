@@ -37,7 +37,7 @@ export default function Dashboard() {
       return false;
     }
     return true;
-  }, [selectedDepartment]);
+  }, [selectedDepartment, isLoadingDepartmentData, departmentData]);
 
   const checkingConfig = useMemo(() => {
     if (!ipAddress || ipAddress === '' || !port || port === 0) {
@@ -49,11 +49,6 @@ export default function Dashboard() {
   // Effect
   useEffect(() => {
     if (isNavigating) return;
-
-    if (!checkingIfHaveDepartment) {
-      setShowDepartmentModal(true)
-      return
-    }
 
     if (isErrorDepartmentData) {
       setIsNavigating(true);
@@ -67,7 +62,16 @@ export default function Dashboard() {
       return
     }
 
-  }, [checkingIfHaveDepartment, isNavigating, isErrorDepartmentData, checkingConfig])
+  }, [isNavigating, isErrorDepartmentData, checkingConfig])
+
+  useEffect(() => {
+    if (isNavigating) return;
+
+    if (!checkingIfHaveDepartment) {
+      setShowDepartmentModal(true);
+      return;
+    }
+  }, [checkingIfHaveDepartment, isNavigating]);
 
   // Handlers
   const handleCameraScan = () => {
@@ -148,7 +152,7 @@ export default function Dashboard() {
           <TapDetector onMultiTap={handleDepartmentChange} tapCount={5} showToast={true} />
           <View className="flex-row items-center gap-2 mb-2">
             <Text className="text-blue-600 text-xl font-bold">
-              {selectedDepartment?.name || 'Refresh To Select Department'}
+              {selectedDepartment?.name || ''}
             </Text>
           </View>
           <View className="flex-row items-center gap-2 mb-2">
@@ -242,7 +246,6 @@ export default function Dashboard() {
                       key={dept.id}
                       onPress={() => {
                         setSelectedDepartment(dept);
-                        setIsNavigating(false);
                       }}
                       activeOpacity={0.2}
                     >
@@ -272,7 +275,6 @@ export default function Dashboard() {
                 onPress={() => {
                   if (selectedDepartment) {
                     setShowDepartmentModal(false);
-                    setIsNavigating(false);
                   }
                 }}
                 disabled={!selectedDepartment}
