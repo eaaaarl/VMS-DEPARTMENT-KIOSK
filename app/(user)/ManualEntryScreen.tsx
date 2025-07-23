@@ -5,7 +5,7 @@ import { useCreateVisitorLogDetailMutation, useCreateVisitorLogDuplicatePhotoMut
 import { formattedDateWithTime } from '@/feature/visitor/utils/formattedDate'
 import { useAppSelector } from '@/lib/redux/hooks'
 import { Ionicons } from '@expo/vector-icons'
-import { format, parse, subMinutes } from 'date-fns'
+import { format, parse } from 'date-fns'
 import { router } from 'expo-router'
 import React, { useCallback, useEffect, useState } from 'react'
 import {
@@ -241,7 +241,7 @@ export default function ManualEntryScreen() {
       const response = await updateVisitorsLogDetail({
         id: visitorStrId,
         dateTime: dateTimeDeptLogin,
-        deptLogOut: format(subMinutes(new Date(), 2), 'yyyy-MM-dd HH:mm:ss'),
+        deptLogOut: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
         userDeptLogOutId: null,
       }).unwrap()
 
@@ -349,7 +349,7 @@ export default function ManualEntryScreen() {
           const dateTimeStrLogin = visitorLogSignInDifferentOffice?.strLogIn
 
           const payloadToSignOutOffice = {
-            logOut: format(subMinutes(new Date(), 1), 'yyyy-MM-dd HH:mm:ss'),
+            logOut: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
             sysLogOut: true,
             returned: true,
           }
@@ -404,13 +404,13 @@ export default function ManualEntryScreen() {
         await updateVisitorsLogDetail({
           id: visitorStrId,
           dateTime: dateTimeDeptLogin,
-          deptLogOut: format(subMinutes(new Date(), 2), 'yyyy-MM-dd HH:mm:ss'),
+          deptLogOut: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
           userDeptLogOutId: null,
         }).unwrap()
 
 
         const payloadToSignOutOffice = {
-          logOut: format(subMinutes(new Date(), 2), 'yyyy-MM-dd HH:mm:ss'),
+          logOut: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
           sysLogOut: true,
           returned: true,
         }
@@ -457,7 +457,7 @@ export default function ManualEntryScreen() {
       console.log('This is will trigger because the visitor is sign in different office')
       const visitorLog = visitorLogSignInDifferentOffice;
       const signOutPayloadDirect: IVisitorSignOutPayload = {
-        deptLogOut: format(subMinutes(new Date(), 2), 'yyyy-MM-dd HH:mm:ss'),
+        deptLogOut: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
         sysDeptLogOut: true
       }
 
@@ -509,11 +509,13 @@ export default function ManualEntryScreen() {
     updateVisitorLog,
     createVisitorLog,
     departmentManualEntry,
-    showSuccessToast,
-    showErrorToast,
     resetForm,
     handleDifferentOfficeVisitorLog,
-    setShowModal
+    setShowModal,
+    createDuplicatePhotoVisitor,
+    signOutVisitor,
+    updateVisitorsLogDetail,
+    showErrorToast
   ])
 
   const handleCancelDIfferentOffice = useCallback(() => {

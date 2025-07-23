@@ -32,7 +32,7 @@ export default function Dashboard() {
 
   // Memo
   const checkingIfHaveDepartment = useMemo(() => {
-    if (!selectedDepartment) {
+    if (!selectedDepartment && !isLoadingDepartmentData && departmentData) {
       return false;
     }
     return true;
@@ -50,13 +50,14 @@ export default function Dashboard() {
     if (isNavigating) return;
 
     if (!checkingIfHaveDepartment) {
-      setIsNavigating(true);
       setShowDepartmentModal(true)
+      return
     }
 
     if (isErrorDepartmentData) {
       setIsNavigating(true);
       router.replace('/(error)/error-screen');
+      return;
     }
 
     if (!checkingConfig) {
@@ -65,7 +66,7 @@ export default function Dashboard() {
       return
     }
 
-  }, [checkingIfHaveDepartment, isNavigating, isErrorDepartmentData, checkingConfig, router])
+  }, [checkingIfHaveDepartment, isNavigating, isErrorDepartmentData, checkingConfig])
 
   // Handlers
   const handleCameraScan = () => {
@@ -110,6 +111,15 @@ export default function Dashboard() {
     } finally {
       setIsRefreshing(false);
     }
+  }
+
+
+  if (isNavigating || isLoadingDepartmentData) {
+    return (
+      <View className="flex-1 bg-blue-50 justify-center items-center">
+        <ActivityIndicator size="large" color="#3B82F6" />
+      </View>
+    );
   }
 
   return (
@@ -219,6 +229,7 @@ export default function Dashboard() {
                       key={dept.id}
                       onPress={() => {
                         setSelectedDepartment(dept);
+                        setIsNavigating(false);
                       }}
                       activeOpacity={0.2}
                     >
@@ -248,6 +259,7 @@ export default function Dashboard() {
                 onPress={() => {
                   if (selectedDepartment) {
                     setShowDepartmentModal(false);
+                    setIsNavigating(false);
                   }
                 }}
                 disabled={!selectedDepartment}

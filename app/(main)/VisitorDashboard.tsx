@@ -96,6 +96,8 @@ export default function Index() {
     dispatch(setSelectedDepartment(dept))
   };
 
+
+
   if (isNavigating || isLoadingDepartment) {
     return (
       <View className="flex-1 bg-blue-50 justify-center items-center">

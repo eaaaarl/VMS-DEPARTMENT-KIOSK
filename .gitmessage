@@ -21,9 +21,3 @@
 #  ✨ feat(auth): add Google OAuth login
 #  🐛 fix(api): prevent null pointer in user endpoint
 #  📚 docs(readme): update installation instructions
-
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
