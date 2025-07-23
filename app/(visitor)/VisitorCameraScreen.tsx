@@ -198,58 +198,6 @@ export default function VisitorCameraScreen() {
     []
   );
 
-  const handleScanSuccess = useCallback(
-    async ({ data: scannedTicket }: BarcodeScanningResult) => {
-      try {
-        const { data: visitorLog } = await visitorLogInfo({
-          strId: scannedTicket,
-        });
-        const { data: visitorLogDetail } = await visitorLogInDetailInfo({
-          strId: scannedTicket,
-        });
-
-        if (!checkVisitorData(visitorLog)) return;
-        if (checkVisitorLoggedOut(visitorLog)) return;
-
-        const sameOfficeVisitor =
-          visitorLog?.results[0].officeId ===
-          Number(VisitorDepartmentEntry?.officeId);
-        const visitorNotLoggedOut =
-          visitorLogDetail?.results?.length === 0 ||
-          visitorLogDetail?.results?.[0]?.deptLogOut !== null;
-
-        if (sameOfficeVisitor && visitorNotLoggedOut) {
-          // Visitor is same office and not logged out
-          await handleSameOfficeVisitor(visitorLog);
-          return;
-        }
-
-        const visitorISnotSameOfficeId =
-          visitorLog?.results[0].officeId !==
-          Number(VisitorDepartmentEntry?.officeId);
-        if (visitorISnotSameOfficeId) {
-          handleDifferentOfficeVisitor(visitorLog, visitorLogDetail);
-          return;
-        }
-
-        handleSignOutVisitor(visitorLogDetail);
-      } catch (error) {
-        console.log("Error checking ticket:", error);
-        Alert.alert("Error", "Failed to process ticket");
-      }
-    },
-    [
-      checkVisitorData,
-      checkVisitorLoggedOut,
-      VisitorDepartmentEntry,
-      handleSameOfficeVisitor,
-      handleDifferentOfficeVisitor,
-      handleSignOutVisitor,
-      visitorLogInfo,
-      visitorLogInDetailInfo,
-    ]
-  );
-
   const handleSubmitVisitorLog = useCallback(async () => {
     if (!validatePurpose(purpose)) return;
 

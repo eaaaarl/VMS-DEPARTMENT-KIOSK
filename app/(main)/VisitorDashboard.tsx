@@ -121,21 +121,21 @@ export default function Index() {
 
   return (
     <SafeAreaView className="flex-1 bg-blue-50">
-      <View className="pt-16 pb-8 px-6">
+      <View className="pt-8 pb-4 px-6 max-w-2xl mx-auto">
         <Text className="text-gray-600 text-lg font-['Poppins-Medium'] text-center mb-2">
           Welcome to
         </Text>
-        <Text className="text-gray-600 text-2xl font-['Poppins-Bold'] text-center mb-8">
+        <Text className="text-gray-600 text-3xl font-['Poppins-Bold'] text-center mb-6">
           Visitors Management System
         </Text>
 
-        <View className="items-center mb-8">
-          <View className="w-24 h-24 bg-gray-200 rounded-full items-center justify-center mb-4 shadow-sm">
-            <Ionicons name="business" size={40} color="#3B82F6" />
+        <View className="items-center mb-4">
+          <View className="w-20 h-20 bg-gray-200 rounded-full items-center justify-center mb-3 shadow-sm">
+            <Ionicons name="business" size={36} color="#3B82F6" />
           </View>
           {currentDepartment ? (
             <View className="relative">
-              <View className="items-center bg-white px-6 py-3 rounded-lg shadow-sm">
+              <View className="items-center bg-white px-8 py-3 rounded-lg shadow-sm">
                 <Text className="text-gray-800 text-xl font-['Poppins-SemiBold'] mb-1">
                   {currentDepartment.name}
                 </Text>
@@ -157,8 +157,8 @@ export default function Index() {
         </View>
       </View>
 
-      <View className="flex-1 px-6 py-8">
-        <View className="bg-white rounded-3xl shadow-lg p-8 mx-2">
+      <View className="flex-1 px-6 py-4 justify-center items-center">
+        <View className="bg-white rounded-3xl shadow-lg p-6 mx-2 max-w-sm w-full">
           <TouchableOpacity
             onPress={() => {
               if (!currentDepartment) {
@@ -172,10 +172,10 @@ export default function Index() {
             activeOpacity={0.8}
           >
             <View className="items-center">
-              <View className="w-24 h-24 bg-blue-100 rounded-2xl items-center justify-center mb-4 shadow-sm">
-                <Ionicons name="qr-code-outline" size={40} color="#3B82F6" />
+              <View className="w-20 h-20 bg-blue-100 rounded-2xl items-center justify-center mb-3 shadow-sm">
+                <Ionicons name="qr-code-outline" size={36} color="#3B82F6" />
               </View>
-              <Text className="text-gray-800 text-xl font-['Poppins-Bold'] mb-2">
+              <Text className="text-gray-800 text-lg font-['Poppins-Bold'] mb-2">
                 SCAN QR CODE
               </Text>
               <Text className="text-gray-600 text-sm text-center font-['Poppins']">
@@ -186,7 +186,7 @@ export default function Index() {
         </View>
       </View>
 
-      <View className="pb-8 px-6">
+      <View className="pb-6 px-6">
         <Text className="text-gray-600 text-center text-sm font-['Poppins']">
           Department Access Portal
         </Text>

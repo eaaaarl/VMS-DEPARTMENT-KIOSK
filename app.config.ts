@@ -13,7 +13,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/adaptive-icon.png",
+        foregroundImage: "./assets/icons/adaptive-icon-box.png",
         backgroundColor: "#ffffff",
       },
       edgeToEdgeEnabled: true,
@@ -29,10 +29,16 @@ export default {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/splash-icon.png",
+          image: "./assets/icons/splash-icon-dark.png",
           imageWidth: 200,
           resizeMode: "contain",
           backgroundColor: "#ffffff",
+          dark: {
+            image: "./assets/icons/splash-icon-light.png",
+            imageWidth: 200,
+            resizeMode: "contain",
+            backgroundColor: "#000000",
+          },
         },
       ],
       [
@@ -42,6 +48,14 @@ export default {
           microphonePermission:
             "Allow $(PRODUCT_NAME) to access your microphone",
           recordAudioAndroid: true,
+        },
+      ],
+      [
+        "expo-build-properties",
+        {
+          android: {
+            usesCleartextTraffic: true,
+          },
         },
       ],
     ],
