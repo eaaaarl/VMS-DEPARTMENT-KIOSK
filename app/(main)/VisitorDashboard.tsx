@@ -6,7 +6,7 @@ import { setVisitorDepartmentEntry } from '@/lib/redux/state/visitorDepartmentEn
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
@@ -22,9 +22,10 @@ export default function Index() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
   const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // RTK Query Hooks
-  const { data: departmentData, isLoading: isLoadingDepartment, isError } = useGetAllDepartmentQuery();
+  const { data: departmentData, isLoading: isLoadingDepartment, isError, refetch } = useGetAllDepartmentQuery();
 
   const checkingConfig = useMemo(() => {
     if (!ipAddress || ipAddress === '' || !port || port === 0) {
@@ -99,7 +100,16 @@ export default function Index() {
     });
   };
 
-
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await refetch()
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   if (isNavigating || isLoadingDepartment) {
     return (
@@ -204,7 +214,18 @@ export default function Index() {
               <Text className="flex-1 text-center text-gray-700 font-['Poppins-SemiBold'] text-base">Office Name</Text>
               <Text className="w-16 text-center text-gray-700 font-['Poppins-SemiBold'] text-base"></Text>
             </View>
-            <ScrollView className="flex-1">
+            <ScrollView className="flex-1"
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={handleRefresh}
+                  colors={['#3B82F6']} // Blue color to match your theme
+                  tintColor="#3B82F6" // For iOS
+                  progressBackgroundColor="#ffffff" // White background for the refresh indicator
+                  progressViewOffset={10} // Adjust position of the spinner
+                />
+              }
+            >
               <View className="gap-3 py-4 px-4">
                 {departmentData?.results?.map((dept) => (
                   <TouchableOpacity

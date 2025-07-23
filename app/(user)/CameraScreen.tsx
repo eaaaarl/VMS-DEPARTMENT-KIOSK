@@ -1,7 +1,8 @@
 import { useAppSelector } from '@/lib/redux/hooks';
 import { Ionicons } from '@expo/vector-icons';
+import { useIsFocused } from '@react-navigation/native';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,13 +18,19 @@ import SignOutModal from '@/feature/user/components/SignOutModal';
 import VisitorInformationModal from '@/feature/user/components/VisitorInformationModal';
 
 export default function CameraScreen() {
+  // State to track if QR processing is in progress
+  const [isProcessingQR, setIsProcessingQR] = useState(false);
+  const [isMounted, setIsMounted] = useState(true);
+
+  // Navigation state
+  const isFocused = useIsFocused();
 
   // Redux State
   const { departmentCameraEntry } = useAppSelector((state) => state.departmentCameraEntry);
   const { ipAddress, port } = useAppSelector((state) => state.config);
 
   // Check configuration
-  React.useEffect(() => {
+  useEffect(() => {
     const checkingConfig = async () => {
       if (!ipAddress || ipAddress === '' || !port || port === 0) {
         router.replace('/(developer)/DeveloperSetting');
@@ -35,21 +42,51 @@ export default function CameraScreen() {
 
   // Custom hooks
   const visitorManagement = useVisitorManagement(departmentCameraEntry);
-  const qrScanner = useQRScanner(visitorManagement.handleScanSuccess);
+
+  // Custom success handler that sets processing state
+  const handleScanSuccess = async (scannedTicket: string) => {
+    setIsProcessingQR(true);
+    await visitorManagement.handleScanSuccess(scannedTicket);
+  };
+
+  const qrScanner = useQRScanner(handleScanSuccess);
+
+  // Handle component mount/unmount
+  useEffect(() => {
+    setIsMounted(true);
+
+    return () => {
+      setIsMounted(false);
+    };
+  }, []);
 
   // Reset scanner when visitor information modal is closed
-  React.useEffect(() => {
+  useEffect(() => {
     if (!visitorManagement.showVisitorInformationCheckingModal &&
       !visitorManagement.showSignOutModal &&
       !visitorManagement.showModal &&
       qrScanner.scanned) {
       qrScanner.resetScanner();
+      setIsProcessingQR(false);
     }
   }, [
     visitorManagement.showVisitorInformationCheckingModal,
     visitorManagement.showSignOutModal,
     visitorManagement.showModal
   ]);
+
+  // Disable camera when navigating away using Expo Router's focus state
+  useEffect(() => {
+    if (isFocused && isMounted && !isProcessingQR) {
+      qrScanner.setCameraEnabled(true);
+    } else {
+      qrScanner.setCameraEnabled(false);
+    }
+
+    return () => {
+      qrScanner.setCameraEnabled(false);
+    };
+  }, [isFocused, isProcessingQR, isMounted]);
 
   if (qrScanner.hasPermission === null) {
     return (
@@ -91,17 +128,28 @@ export default function CameraScreen() {
         {/* Header */}
         <CameraHeader
           onBack={() => router.back()}
-          cameraEnabled={qrScanner.cameraEnabled}
-          onToggleCamera={() => qrScanner.setCameraEnabled(!qrScanner.cameraEnabled)}
+          cameraEnabled={qrScanner.cameraEnabled && !isProcessingQR}
+          onToggleCamera={() => {
+            if (!isProcessingQR) {
+              qrScanner.setCameraEnabled(!qrScanner.cameraEnabled);
+            }
+          }}
         />
 
-        {/* Camera View */}
-        <CameraViewComponent
-          onBarcodeScanned={qrScanner.handleBarCodeScanned}
-          scanned={qrScanner.scanned}
-          cameraEnabled={qrScanner.cameraEnabled}
-          onScanAgain={qrScanner.resetScanner}
-        />
+        {/* Camera View or Processing State */}
+        {isProcessingQR ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" color="#3B82F6" />
+            <Text className="mt-4 text-gray-600">Processing QR code...</Text>
+          </View>
+        ) : (
+          <CameraViewComponent
+            onBarcodeScanned={qrScanner.handleBarCodeScanned}
+            scanned={qrScanner.scanned}
+            cameraEnabled={qrScanner.cameraEnabled && isMounted}
+            onScanAgain={qrScanner.resetScanner}
+          />
+        )}
       </View>
 
       {/* Visitor Information Modal */}
@@ -110,6 +158,7 @@ export default function CameraScreen() {
         onClose={() => {
           visitorManagement.handleCloseVisitorInformationCheckingModal();
           qrScanner.resetScanner(); // Reset scanner when modal is closed
+          setIsProcessingQR(false);
         }}
         currentVisitorLog={visitorManagement.currentVisitorLog}
         idVisitorImage={visitorManagement.idVisitorImage}

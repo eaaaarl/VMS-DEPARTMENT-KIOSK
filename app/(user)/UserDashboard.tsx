@@ -1,10 +1,11 @@
+import TapDetector from '@/components/TapDetector';
 import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi';
 import { Department } from '@/feature/department/api/interface';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { setDepartmentCameraEntry } from '@/lib/redux/state/departmentCameraEntrySlice';
 import { setDepartmentManualEntry } from '@/lib/redux/state/departmentManualEntrySlice';
 import { router } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -99,13 +100,22 @@ export default function Dashboard() {
     router.push('/(user)/ManualEntryScreen')
   }
 
+  const handleDepartmentChange = useCallback(() => {
+    // This function is now triggered after 5 taps on the department display
+    setShowDepartmentModal(true);
+    Toast.show({
+      type: 'success',
+      position: 'top',
+      text1: 'Admin Access',
+      text2: 'Department selection mode activated',
+      visibilityTime: 2000,
+    });
+  }, []);
+
   const handleRefresh = async () => {
     try {
       setIsRefreshing(true);
       await refetchDepartmentData();
-      if (!checkingIfHaveDepartment) {
-        setShowDepartmentModal(true)
-      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -124,82 +134,74 @@ export default function Dashboard() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-          />
-        }
-      >
-        <View className="flex-1 px-6 py-4">
-          <View className="mb-8">
-            <Text className="text-2xl font-bold text-gray-800 mb-2">
-              Dashboard
-            </Text>
-            <Text className="text-gray-600">
-              Welcome back! Staff
-            </Text>
-          </View>
-
-          <View className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <View className="flex-row items-center gap-2 mb-2">
-              <Text className="text-blue-600 text-xl font-bold">
-                {selectedDepartment?.name || 'Refresh To Select Department'}
-              </Text>
-            </View>
-            <View className="flex-row items-center gap-2 mb-2">
-              <Text className="text-gray-500 mt-1">
-                {selectedDepartment?.officeName || ''}
-              </Text>
-            </View>
-          </View>
-
-          <View className="gap-4">
-
-            <Text className="text-lg font-semibold text-gray-800 mb-4">
-              Quick Actions
-            </Text>
-
-            <TouchableOpacity
-              onPress={handleCameraScan}
-              className="bg-blue-600 rounded-lg p-4 flex-row items-center justify-center shadow-sm"
-              activeOpacity={0.8}
-            >
-              <View className="bg-white rounded-full p-2 mr-3">
-                <Text className="text-blue-600 text-lg">📷</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-white font-semibold text-lg">
-                  Camera Scan
-                </Text>
-                <Text className="text-blue-100 text-sm">
-                  Scan QR codes
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleManualEntry}
-              className="bg-green-600 rounded-lg p-4 flex-row items-center justify-center shadow-sm"
-              activeOpacity={0.8}
-            >
-              <View className="bg-white rounded-full p-2 mr-3">
-                <Text className="text-green-600 text-lg">✏️</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-white font-semibold text-lg">
-                  Manual Entry
-                </Text>
-                <Text className="text-green-100 text-sm">
-                  Enter information manually
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
+      <View className="flex-1 px-6 py-4">
+        <View className="mb-8">
+          <Text className="text-2xl font-bold text-gray-800 mb-2">
+            Dashboard
+          </Text>
+          <Text className="text-gray-600">
+            Welcome back! Staff
+          </Text>
         </View>
-      </ScrollView>
+
+        <View className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <TapDetector onMultiTap={handleDepartmentChange} tapCount={5} showToast={true} />
+          <View className="flex-row items-center gap-2 mb-2">
+            <Text className="text-blue-600 text-xl font-bold">
+              {selectedDepartment?.name || 'Refresh To Select Department'}
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-2 mb-2">
+            <Text className="text-gray-500 mt-1">
+              {selectedDepartment?.officeName || ''}
+            </Text>
+          </View>
+        </View>
+
+        <View className="gap-4">
+
+          <Text className="text-lg font-semibold text-gray-800 mb-4">
+            Quick Actions
+          </Text>
+
+          <TouchableOpacity
+            onPress={handleCameraScan}
+            className="bg-blue-600 rounded-lg p-4 flex-row items-center justify-center shadow-sm"
+            activeOpacity={0.8}
+          >
+            <View className="bg-white rounded-full p-2 mr-3">
+              <Text className="text-blue-600 text-lg">📷</Text>
+            </View>
+            <View className="flex-1">
+              <Text className="text-white font-semibold text-lg">
+                Camera Scan
+              </Text>
+              <Text className="text-blue-100 text-sm">
+                Scan QR codes
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleManualEntry}
+            className="bg-green-600 rounded-lg p-4 flex-row items-center justify-center shadow-sm"
+            activeOpacity={0.8}
+          >
+            <View className="bg-white rounded-full p-2 mr-3">
+              <Text className="text-green-600 text-lg">✏️</Text>
+            </View>
+            <View className="flex-1">
+              <Text className="text-white font-semibold text-lg">
+                Manual Entry
+              </Text>
+              <Text className="text-green-100 text-sm">
+                Enter information manually
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+      </View>
 
       <Modal
         visible={showDepartmentModal}
@@ -217,13 +219,24 @@ export default function Dashboard() {
               <Text className="flex-1 text-center text-gray-700 font-semibold text-base">Office Name</Text>
               <Text className="w-16 text-center text-gray-700 font-semibold text-base "></Text>
             </View>
-            <ScrollView className="flex-1 px-4 my-4" showsVerticalScrollIndicator={true}>
+            <ScrollView className="flex-1" showsVerticalScrollIndicator={true}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={handleRefresh}
+                  colors={['#3B82F6']} // Blue color to match your theme
+                  tintColor="#3B82F6" // For iOS
+                  progressBackgroundColor="#ffffff" // White background for the refresh indicator
+                  progressViewOffset={10}
+                />
+              }
+            >
               {isLoadingDepartmentData ? (
                 <View className="flex-1 items-center justify-center">
                   <ActivityIndicator size="large" color="#0000ff" />
                 </View>
               ) : (
-                <View className="gap-2">
+                <View className="gap-2 px-4 py-4">
                   {departmentData?.results.map((dept) => (
                     <TouchableOpacity
                       key={dept.id}
@@ -233,7 +246,7 @@ export default function Dashboard() {
                       }}
                       activeOpacity={0.2}
                     >
-                      <View className={`flex-row items-center py-4 px-3 rounded-lg ${selectedDepartment?.id === dept.id ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'
+                      <View className={`flex-row items-center border border-gray-200 py-4 px-3 rounded-lg ${selectedDepartment?.id === dept.id ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'
                         }`}>
                         <Text className="flex-1 text-gray-800 text-base font-medium">{dept.name}</Text>
                         <Text className="flex-1 text-center text-gray-700 text-base font-medium">{dept.officeName}</Text>
@@ -277,6 +290,6 @@ export default function Dashboard() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </SafeAreaView >
   )
 }
