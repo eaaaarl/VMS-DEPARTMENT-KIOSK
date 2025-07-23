@@ -17,9 +17,9 @@ const persistConfig = {
   version: 1,
   blacklist: [
     "mode",
-    "department",
     "departmentManualEntry", // Blacklist for not persist
     "departmentCameraEntry", // Blacklist for not persist
+    "visitorDepartmentEntry", // Blacklist for not persist
     ...apisReducerPath,
   ],
 };

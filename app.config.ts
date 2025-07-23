@@ -13,7 +13,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/adaptive-icon.png",
+        foregroundImage: "./assets/icons/adaptive-icon-box.png",
         backgroundColor: "#ffffff",
       },
       edgeToEdgeEnabled: true,
@@ -29,10 +29,16 @@ export default {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/splash-icon.png",
+          image: "./assets/icons/splash-icon-dark.png",
           imageWidth: 200,
           resizeMode: "contain",
           backgroundColor: "#ffffff",
+          dark: {
+            image: "./assets/icons/splash-icon-light.png",
+            imageWidth: 200,
+            resizeMode: "contain",
+            backgroundColor: "#000000",
+          },
         },
       ],
       [
@@ -44,9 +50,22 @@ export default {
           recordAudioAndroid: true,
         },
       ],
+      [
+        "expo-build-properties",
+        {
+          android: {
+            usesCleartextTraffic: true,
+          },
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,
+    },
+    extra: {
+      eas: {
+        projectId: "22188d03-e50b-48bc-93f5-91a24146c6a2",
+      },
     },
   },
 };

@@ -8,7 +8,7 @@ interface QRCodeOverlayProps {
 
 const QRCodeOverlay: React.FC<QRCodeOverlayProps> = ({ scanned }) => {
   // Size of the scanning frame
-  const frameSize = 250;
+  const frameSize = 230;
 
   return (
     <View className="absolute inset-0 justify-center items-center">
