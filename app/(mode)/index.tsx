@@ -21,6 +21,7 @@ export default function Index() {
             if (Platform.OS === 'ios' && Platform.isPad) {
                 return 'tablet'
             }
+
             // For Android and other platforms, use screen size
             // Typically, 7" tablets have diagonal of ~900 logical pixels
             return screenDiagonal >= 900 ? 'tablet' : 'mobile'

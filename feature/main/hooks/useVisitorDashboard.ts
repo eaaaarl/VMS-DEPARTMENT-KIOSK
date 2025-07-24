@@ -1,10 +1,10 @@
-import { useGetAllDepartmentQuery } from '@/feature/department/api/deparmentApi';
-import { Department } from '@/feature/department/api/interface';
-import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
-import { setVisitorDepartmentEntry } from '@/lib/redux/state/visitorDepartmentEntry';
-import { router } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import Toast from 'react-native-toast-message';
+import { useGetAllDepartmentQuery } from "@/feature/department/api/deparmentApi";
+import { Department } from "@/feature/department/api/interface";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { setVisitorDepartmentEntry } from "@/lib/redux/state/visitorDepartmentEntry";
+import { router } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Toast from "react-native-toast-message";
 
 export const useVisitorDashboard = () => {
   const dispatch = useAppDispatch();
@@ -13,13 +13,20 @@ export const useVisitorDashboard = () => {
 
   const [isNavigating, setIsNavigating] = useState(false);
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
-  const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
+  const [currentDepartment, setCurrentDepartment] = useState<Department | null>(
+    null
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { data: departmentData, isLoading: isLoadingDepartment, isError, refetch } = useGetAllDepartmentQuery();
+  const {
+    data: departmentData,
+    isLoading: isLoadingDepartment,
+    isError,
+    refetch,
+  } = useGetAllDepartmentQuery();
 
   const checkingConfig = useMemo(() => {
-    if (!ipAddress || ipAddress === '' || !port || port === 0) {
+    if (!ipAddress || ipAddress === "" || !port || port === 0) {
       return false;
     }
     return true;
@@ -37,7 +44,7 @@ export const useVisitorDashboard = () => {
 
     if (!checkingConfig) {
       setIsNavigating(true);
-      router.replace('/(developer)/DeveloperSetting');
+      router.replace("/(developer)/DeveloperSetting");
       return;
     }
 
@@ -45,9 +52,9 @@ export const useVisitorDashboard = () => {
       setIsNavigating(true);
 
       if (!checkingConfig) {
-        router.replace('/(developer)/DeveloperSetting');
+        router.replace("/(developer)/DeveloperSetting");
       } else {
-        router.replace('/(error)/error-screen');
+        router.replace("/(error)/error-screen");
       }
 
       return;
@@ -55,10 +62,10 @@ export const useVisitorDashboard = () => {
 
     if (LayoutMode === null) {
       setIsNavigating(true);
-      router.replace('/(mode)');
+      router.replace("/(mode)");
       return;
     }
-  }, [checkingConfig, LayoutMode, isError, isNavigating, checkingIfHaveDepartment]);
+  }, [checkingConfig, LayoutMode, isError, isNavigating]);
 
   useEffect(() => {
     if (isNavigating) return;
@@ -72,16 +79,16 @@ export const useVisitorDashboard = () => {
   const handleDepartmentChange = useCallback(() => {
     setShowDepartmentModal(true);
     Toast.show({
-      type: 'success',
-      position: 'top',
-      text1: 'Admin Access',
-      text2: 'Department selection mode activated',
+      type: "success",
+      position: "top",
+      text1: "Admin Access",
+      text2: "Department selection mode activated",
       visibilityTime: 2000,
     });
   }, []);
 
   const handleDepartmentSelect = useCallback((dept: Department) => {
-    setCurrentDepartment(prev => {
+    setCurrentDepartment((prev) => {
       if (prev && prev.id === dept.id) {
         return null;
       }
@@ -106,7 +113,7 @@ export const useVisitorDashboard = () => {
       return;
     }
     dispatch(setVisitorDepartmentEntry(currentDepartment));
-    router.push('/(visitor)/VisitorCameraScreen');
+    router.push("/(visitor)/VisitorCameraScreen");
   }, [currentDepartment, dispatch]);
 
   return {
@@ -122,4 +129,4 @@ export const useVisitorDashboard = () => {
     handleRefresh,
     handleQRScan,
   };
-}; 
+};

@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function VisitorCameraScreen() {
   const {
+    
     // Camera states
     hasPermission,
     scanned,

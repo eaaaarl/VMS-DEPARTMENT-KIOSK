@@ -16,7 +16,6 @@ const persistConfig = {
   storage: AsyncStorage,
   version: 1,
   blacklist: [
-    "mode",
     "departmentManualEntry", // Blacklist for not persist
     "departmentCameraEntry", // Blacklist for not persist
     "visitorDepartmentEntry", // Blacklist for not persist

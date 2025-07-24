@@ -2,7 +2,9 @@ import DepartmentInfo from '@/feature/user/components/DepartmentInfo';
 import DepartmentSelector from '@/feature/user/components/DepartmentSelector';
 import QuickActions from '@/feature/user/components/QuickActions';
 import { useUserDashboard } from '@/feature/user/hooks/useUserDashboard';
-import React from 'react';
+import { useAppSelector } from '@/lib/redux/hooks';
+import { router } from 'expo-router';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,6 +23,14 @@ export default function UserDashboard() {
     handleDepartmentChange,
     handleRefresh,
   } = useUserDashboard();
+
+  const currentMode = useAppSelector(state => state.mode.LayoutMode)
+
+  useEffect(() => {
+    if (currentMode === 'Kiosk') {
+      router.replace('/(main)/VisitorDashboard')
+    }
+  }, [currentMode])
 
   if (isNavigating || isLoadingDepartmentData) {
     return (

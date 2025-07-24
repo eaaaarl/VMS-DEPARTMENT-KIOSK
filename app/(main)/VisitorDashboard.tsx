@@ -1,9 +1,12 @@
+import TapDetectorForMode from '@/components/TapDetectorForMode';
 import { DepartmentDisplay } from '@/feature/main/components/DepartmentDisplay';
 import { DepartmentModal } from '@/feature/main/components/DepartmentModal';
 import { QRScanButton } from '@/feature/main/components/QRScanButton';
 import { WelcomeHeader } from '@/feature/main/components/WelcomeHeader';
 import { useVisitorDashboard } from '@/feature/main/hooks/useVisitorDashboard';
-import React from 'react';
+import { useAppSelector } from '@/lib/redux/hooks';
+import { router } from 'expo-router';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,6 +24,15 @@ export default function VisitorDashboard() {
     handleRefresh,
     handleQRScan,
   } = useVisitorDashboard();
+
+  const currentMode = useAppSelector(state => state.mode.LayoutMode)
+
+  useEffect(() => {
+    if (currentMode === 'User') {
+      router.replace('/(user)/UserDashboard')
+    }
+  }, [currentMode])
+
 
   if (isNavigating || isLoadingDepartment) {
     return (
@@ -41,12 +53,18 @@ export default function VisitorDashboard() {
 
       <QRScanButton onPress={handleQRScan} />
 
-      <View className="pb-6 px-6">
-        <Text className="text-gray-600 text-center text-sm font-['Poppins']">
-          Department Access Portal
-        </Text>
-      </View>
-
+      <TapDetectorForMode onMultiTap={() => {
+        router.push("/(mode)");
+      }}
+        tapCount={6}
+        showToast={false}
+      >
+        <View className="pb-6 px-6">
+          <Text className="text-gray-600 text-center text-sm font-['Poppins']">
+            Department Access Portal
+          </Text>
+        </View>
+      </TapDetectorForMode>
       <DepartmentModal
         visible={showDepartmentModal}
         onClose={() => setShowDepartmentModal(false)}

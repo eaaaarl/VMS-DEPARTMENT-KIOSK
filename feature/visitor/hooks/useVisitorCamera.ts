@@ -164,6 +164,8 @@ export const useVisitorCamera = (): UseVisitorCameraReturn => {
         text1: "ID Not in use!",
         text2: "Please check the ticket id",
       });
+      setScanned(false);
+      setCameraEnabled(true);
       return false;
     }
     return true;
@@ -175,6 +177,8 @@ export const useVisitorCamera = (): UseVisitorCameraReturn => {
         type: "error",
         text1: "ID Already Logged Out!",
       });
+      setScanned(false);
+      setCameraEnabled(true);
       return true;
     }
     return false;
