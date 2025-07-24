@@ -3,9 +3,10 @@ import DepartmentSelector from '@/feature/user/components/DepartmentSelector';
 import QuickActions from '@/feature/user/components/QuickActions';
 import { useUserDashboard } from '@/feature/user/hooks/useUserDashboard';
 import { useAppSelector } from '@/lib/redux/hooks';
+import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function UserDashboard() {
@@ -43,13 +44,21 @@ export default function UserDashboard() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <View className="flex-1 px-6 py-4">
-        <View className="mb-8">
-          <Text className="text-2xl font-bold text-gray-800 mb-2">
-            Dashboard
-          </Text>
-          <Text className="text-gray-600">
-            Welcome back! Staff
-          </Text>
+        <View className="flex-row justify-between items-center mb-8">
+          <View>
+            <Text className="text-2xl font-bold text-gray-800 mb-2">
+              Dashboard
+            </Text>
+            <Text className="text-gray-600">
+              Welcome back! Staff
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push('/(mode)')}
+            className="bg-blue-100 p-2 rounded-full"
+          >
+            <MaterialIcons name="swap-horiz" size={24} color="#2563eb" />
+          </TouchableOpacity>
         </View>
 
         <DepartmentInfo

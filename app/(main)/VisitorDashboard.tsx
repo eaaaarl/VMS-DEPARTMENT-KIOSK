@@ -5,9 +5,10 @@ import { QRScanButton } from '@/feature/main/components/QRScanButton';
 import { WelcomeHeader } from '@/feature/main/components/WelcomeHeader';
 import { useVisitorDashboard } from '@/feature/main/hooks/useVisitorDashboard';
 import { useAppSelector } from '@/lib/redux/hooks';
+import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function VisitorDashboard() {
@@ -44,7 +45,17 @@ export default function VisitorDashboard() {
 
   return (
     <SafeAreaView className="flex-1 bg-blue-50">
-      <WelcomeHeader />
+      <View className="flex-row justify-between items-center px-4 py-2">
+        <View className="flex-1">
+          <WelcomeHeader />
+        </View>
+        <TouchableOpacity
+          onPress={() => router.push('/(mode)')}
+          className="bg-blue-100 p-2 rounded-full"
+        >
+          <MaterialIcons name="swap-horiz" size={24} color="#2563eb" />
+        </TouchableOpacity>
+      </View>
 
       <DepartmentDisplay
         currentDepartment={currentDepartment}
