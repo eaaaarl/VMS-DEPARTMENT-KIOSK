@@ -5,7 +5,7 @@ import { router } from 'expo-router'
 import React, { useEffect } from 'react'
 import { Dimensions, Platform, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native'
 
-export default function ModeSelection() {
+export default function Index() {
     const dispatch = useAppDispatch()
     const currentMode = useAppSelector(state => state.mode.LayoutMode)
     const deviceType = useAppSelector(state => state.mode.deviceType)
@@ -17,12 +17,10 @@ export default function ModeSelection() {
             // Check if device is a tablet based on screen size and pixel density
             const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
             const screenDiagonal = Math.sqrt(screenWidth * screenWidth + screenHeight * screenHeight)
-
             // For iOS, we can use idiom
             if (Platform.OS === 'ios' && Platform.isPad) {
                 return 'tablet'
             }
-
             // For Android and other platforms, use screen size
             // Typically, 7" tablets have diagonal of ~900 logical pixels
             return screenDiagonal >= 900 ? 'tablet' : 'mobile'
