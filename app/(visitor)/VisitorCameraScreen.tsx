@@ -2,636 +2,47 @@ import ConfirmationModal from '@/feature/user/components/ConfirmationModal';
 import QRCodeOverlay from '@/feature/user/components/QRCodeOverlay';
 import SignOutModal from '@/feature/user/components/SignOutModal';
 import VisitorInformationModal from '@/feature/user/components/VisitorInformationModal';
-import { ICreateVisitorLogDetailPayload, ICreateVisitorLogPayload, IVisitorSignOutPayload, VisitorLog, VisitorLogDetail } from '@/feature/visitor/api/inteface';
-import {
-  useCreateVisitorLogDetailMutation,
-  useCreateVisitorLogDuplicatePhotoMutation,
-  useCreateVisitorLogMutation,
-  useLazyVisitorImageQuery,
-  useLazyVisitorLogInDetailInfoQuery,
-  useLazyVisitorLogInfoQuery,
-  useSignOutVisitorLogDetailMutation,
-  useUpdateVisitorLogMutation,
-  useUpdateVisitorsLogDetailMutation,
-} from '@/feature/visitor/api/visitorApi';
-import { useAppSelector } from '@/lib/redux/hooks';
+import { useVisitorCamera } from '@/feature/visitor/hooks/useVisitorCamera';
 import { AntDesign, Ionicons } from '@expo/vector-icons';
-import { format, parse } from 'date-fns';
-import { BarcodeScanningResult, Camera, CameraView } from 'expo-camera';
+import { CameraView } from 'expo-camera';
 import { router } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
-
-export const MODAL_MESSAGES = {
-  DIFFERENT_OFFICE: `You are not currently signed in to this department.\nWould you like to automatically sign out\nfrom your previous location?`,
-};
 
 export default function VisitorCameraScreen() {
-  // Camera permission state
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [scanned, setScanned] = useState(false);
-  const [cameraEnabled, setCameraEnabled] = useState(true);
+  const {
+    
+    // Camera states
+    hasPermission,
+    scanned,
+    cameraEnabled,
+    setCameraEnabled,
 
-
-  // Redux State
-  const { VisitorDepartmentEntry } = useAppSelector((state) => state.visitorDepartmentEntry)
-
-  // Visitor information checking modal state
-  const [
+    // Modal states and data
     showVisitorInformationCheckingModal,
-    setShowVisitorInformationCheckingModal,
-  ] = useState(false);
-  const [currentVisitorLog, setCurrentVisitorLog] = useState<VisitorLog | null>(
-    null
-  );
-  const [
-    currentVisitorLogInDetailSignOut,
-    setCurrentVisitorLogInDetailSignOut,
-  ] = useState<VisitorLogDetail | null>(null);
-  const [purpose, setPurpose] = useState("");
-  const [idVisitorImage, setIdVisitorImage] = useState<string | null>(null);
-  const [photoVisitorImage, setPhotoVisitorImage] = useState<string | null>(
-    null
-  );
-  const [showSignOutModal, setShowSignOutModal] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [modalMessage, setModalMessage] = useState<string>("");
-  const [
-    visitorDetailSignInDifferentOffice,
-    setVisitorDetailSignInDifferentOffice,
-  ] = useState<VisitorLogDetail | null>(null);
-  const [visitorLogSignInDifferentOffice, setVisitorLogSignInDifferentOffice] =
-    useState<VisitorLog | null>(null);
-
-  //Redux Hooks
-  const [visitorLogInfo] = useLazyVisitorLogInfoQuery();
-  const [visitorLogInDetailInfo] = useLazyVisitorLogInDetailInfoQuery();
-  const [visitorImage] = useLazyVisitorImageQuery();
-  const [
-    createVisitorLogDetail,
-    { isLoading: isLoadingCreateVisitorLogDetail },
-  ] = useCreateVisitorLogDetailMutation();
-  const [
-    updateVisitorsLogDetail,
-    { isLoading: isLoadingUpdateVisitorsLogDetail },
-  ] = useUpdateVisitorsLogDetailMutation();
-  const [updateVisitorLog, { isLoading: isLoadingUpdateVisitorLog }] =
-    useUpdateVisitorLogMutation();
-  const [createVisitorLog, { isLoading: isLoadingCreateVisitorLog }] =
-    useCreateVisitorLogMutation();
-  const [signOutVisitor, { isLoading: isLoadingSignOutVisitor }] =
-    useSignOutVisitorLogDetailMutation();
-  const [
-    createDuplicatePhotoVisitor,
-    { isLoading: isLoadingCreateDuplicatePhotoVisitor },
-  ] = useCreateVisitorLogDuplicatePhotoMutation();
-
-
-  // Request camera permissions on mount and handle cleanup
-  useEffect(() => {
-    const getCameraPermissions = async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    };
-
-    getCameraPermissions();
-
-    // Cleanup function to disable camera when component unmounts
-    return () => {
-      setCameraEnabled(false);
-    };
-  }, []);
-
-  const validatePurpose = useCallback((purposeText: string): boolean => {
-    if (purposeText.trim() === "") {
-      Toast.show({
-        type: "error",
-        text1: "Please enter a purpose of the visit!",
-      });
-      return false;
-    }
-    return true;
-  }, []);
-
-  const handleChangePurpose = useCallback((purpose: string) => {
-    setPurpose(purpose);
-  }, []);
-
-  const handleCloseVisitorInformationCheckingModal = useCallback(() => {
-    setShowVisitorInformationCheckingModal(false);
-    setCurrentVisitorLog(null);
-    setIdVisitorImage(null);
-    setPhotoVisitorImage(null);
-    setPurpose("");
-    // Keep camera disabled until user explicitly re-enables it
-  }, []);
-
-  const checkVisitorData = useCallback((visitorData: any) => {
-    if (visitorData?.results?.length === 0) {
-      Toast.show({
-        type: "error",
-        text1: "ID Not in use!",
-        text2: "Please check the ticket id",
-      });
-      return false;
-    }
-    return true;
-  }, []);
-
-  const checkVisitorLoggedOut = useCallback((visitorData: any) => {
-    if (visitorData?.results?.[0]?.logOut !== null) {
-      Toast.show({
-        type: "error",
-        text1: "ID Already Logged Out!",
-      });
-      return true;
-    }
-    return false;
-  }, []);
-
-  const fetchVisitorImages = useCallback(
-    async (logInTime: string) => {
-      try {
-        const imageUrl =
-          logInTime.replace(" ", "_").replace(/:/g, "-") + ".png";
-        const imageData = await visitorImage({ fileName: imageUrl }).unwrap();
-
-        if (imageData.idExist && imageData.photoExist) {
-          setIdVisitorImage(`id_${imageUrl}`);
-          setPhotoVisitorImage(`face_${imageUrl}`);
-        } else {
-          setIdVisitorImage(null);
-          setPhotoVisitorImage(null);
-        }
-      } catch (error) {
-        console.log("Error fetching images:", error);
-        setIdVisitorImage(null);
-        setPhotoVisitorImage(null);
-      }
-    },
-    [visitorImage]
-  );
-
-  const handleSignOutVisitor = useCallback((visitorDetailData: any) => {
-    setShowSignOutModal(true);
-    setCurrentVisitorLogInDetailSignOut(visitorDetailData.results[0]);
-  }, []);
-
-  const handleSameOfficeVisitor = useCallback(
-    async (visitorLogData: any) => {
-      setShowVisitorInformationCheckingModal(true);
-      setCurrentVisitorLog(visitorLogData.results[0]);
-      await fetchVisitorImages(visitorLogData.results[0].strLogIn);
-    },
-    [fetchVisitorImages]
-  );
-
-  const handleDifferentOfficeVisitor = useCallback(
-    (visitorLogData: any, visitorDetailData: any) => {
-      setShowModal(true);
-      setModalMessage(MODAL_MESSAGES.DIFFERENT_OFFICE);
-      setVisitorDetailSignInDifferentOffice(visitorDetailData.results[0]);
-      setVisitorLogSignInDifferentOffice(visitorLogData.results[0]);
-    },
-    []
-  );
-
-  const handleSubmitVisitorLog = useCallback(async () => {
-    if (!validatePurpose(purpose)) return;
-
-    try {
-      const payload: ICreateVisitorLogDetailPayload = {
-        payload: {
-          log: {
-            id: currentVisitorLog?.id as number,
-            strId: currentVisitorLog?.strId as string,
-            logIn: format(
-              new Date(currentVisitorLog?.logIn || ""),
-              "yyyy-MM-dd HH:mm:ss"
-            ),
-            deptLogIn: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
-            visitorId: currentVisitorLog?.visitorId as number,
-            deptId: VisitorDepartmentEntry?.id as number,
-            reason: purpose,
-            userDeptLogInId: null,
-          },
-        },
-      };
-
-      const response = await createVisitorLogDetail(payload).unwrap();
-      Toast.show({
-        type: "success",
-        text1: response.ghMessage.toUpperCase(),
-        position: "bottom",
-        bottomOffset: 100,
-        visibilityTime: 3000,
-      });
-      handleCloseVisitorInformationCheckingModal();
-      setPurpose("");
-
-      // Re-enable camera after successful submission for next scan
-      setTimeout(() => {
-        setScanned(false);
-        setCameraEnabled(true);
-      }, 1000); // Small delay to ensure modal is closed first
-    } catch (error) {
-      console.log("Error submitting visitor log:", error);
-      Toast.show({
-        type: "error",
-        text1: "Failed to submit visitor log",
-        position: "bottom",
-        bottomOffset: 100,
-        visibilityTime: 4000,
-      });
-    }
-  }, [
-    validatePurpose,
+    showSignOutModal,
+    showModal,
+    modalMessage,
     currentVisitorLog,
-    VisitorDepartmentEntry,
-    createVisitorLogDetail,
-    handleCloseVisitorInformationCheckingModal,
-    setPurpose,
+    currentVisitorLogInDetailSignOut,
     purpose,
-  ]);
+    idVisitorImage,
+    photoVisitorImage,
 
-  const handleSignOut = useCallback(async () => {
-    if (
-      !currentVisitorLogInDetailSignOut?.strId ||
-      !currentVisitorLogInDetailSignOut?.strDeptLogIn
-    ) {
-      Toast.show({
-        type: "error",
-        text1: "No visitor log in detail found!",
-        text2: "Please check the ticket id",
-        position: "bottom",
-        bottomOffset: 100,
-        visibilityTime: 4000,
-      });
-      return;
-    }
+    // Loading state
+    isLoading,
 
-    try {
-      const dateTimeDeptLogin = currentVisitorLogInDetailSignOut.strDeptLogIn;
-      const visitorStrId = currentVisitorLogInDetailSignOut.strId;
-
-      const response = await updateVisitorsLogDetail({
-        id: visitorStrId,
-        dateTime: dateTimeDeptLogin,
-        deptLogOut: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
-        userDeptLogOutId: null,
-      }).unwrap();
-
-      Toast.show({
-        type: "success",
-        text1: response.ghMessage.toUpperCase(),
-        position: "bottom",
-        bottomOffset: 100,
-        visibilityTime: 3000,
-      });
-      setShowSignOutModal(false);
-      setPurpose("");
-
-      // Re-enable camera after successful sign out for next scan
-      setTimeout(() => {
-        setScanned(false);
-        setCameraEnabled(true);
-      }, 1000); // Small delay to ensure modal is closed first
-    } catch (error) {
-      console.log("Sign out error:", error);
-      Toast.show({
-        type: "error",
-        text1: "Sign Out Failed",
-        text2: "Please try again or check your connection",
-        position: "bottom",
-        bottomOffset: 100,
-        visibilityTime: 4000,
-      });
-    }
-  }, [currentVisitorLogInDetailSignOut, updateVisitorsLogDetail]);
-
-  const showErrorToast = useCallback((title: string, subtitle?: string) => {
-    Toast.show({
-      type: "error",
-      text1: title,
-      text2: subtitle,
-      position: "bottom",
-      bottomOffset: 100,
-      visibilityTime: 4000,
-    });
-  }, []);
-
-  const resetForm = useCallback(() => {
-    setPurpose("");
-  }, []);
-
-  const handleDifferentOfficeVisitorLog = useCallback(
-    async (visitorLogData: VisitorLog) => {
-      setShowVisitorInformationCheckingModal(true);
-      setCurrentVisitorLog(visitorLogData);
-      await fetchVisitorImages(visitorLogData.strLogIn);
-    },
-    [fetchVisitorImages]
-  );
-
-  const formatDateForFilename = (dateString: string): string => {
-    return (
-      format(dateString, "yyyy-MM-dd HH:mm:ss")
-        .replace(" ", "_")
-        .replace(/:/g, "-") + ".png"
-    );
-  };
-
-  const parseAndFormatLogDate = (logDateStr: string): string => {
-    const parsedDate = parse(logDateStr, "MM/dd/yyyy", new Date());
-    return format(parsedDate, "yyyy-MM-dd");
-  };
-
-  const createSignOutPayload = () => ({
-    logOut: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
-    sysLogOut: true,
-    returned: true,
-  });
-
-  const createSignInPayload = (
-    visitorData: VisitorLog,
-    officeId: string | number,
-    formattedDate: string
-  ): ICreateVisitorLogPayload => ({
-    id: visitorData.id,
-    strId: visitorData.strId,
-    logIn: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
-    logInDate: formattedDate,
-    visitorId: visitorData.visitorId,
-    officeId: Number(officeId),
-    serviceId: visitorData.serviceId,
-    returned: false,
-    specService: visitorData.specService ?? "",
-    userLogInId: 0,
-  });
-
-  const signOutFromPreviousOffice = useCallback(
-    async (visitorStrId: string, dateTimeLogin: string) => {
-      const signOutPayload = createSignOutPayload();
-
-      await updateVisitorLog({
-        id: visitorStrId,
-        dateTime: dateTimeLogin,
-        ...signOutPayload,
-      }).unwrap();
-    },
-    [updateVisitorLog]
-  );
-
-  const signOutFromDepartment = useCallback(
-    async (visitorStrId: string, dateTimeDeptLogin: string) => {
-      await updateVisitorsLogDetail({
-        id: visitorStrId,
-        dateTime: dateTimeDeptLogin,
-        deptLogOut: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
-        userDeptLogOutId: null,
-      }).unwrap();
-    },
-    [updateVisitorsLogDetail]
-  );
-
-  const duplicateVisitorPhoto = useCallback(
-    async (originalLogIn: string, newLogIn: string) => {
-      const fileName = formatDateForFilename(originalLogIn);
-      const newfileName =
-        newLogIn.replace(" ", "_").replace(/:/g, "-") + ".png";
-
-      await createDuplicatePhotoVisitor({
-        filename: fileName,
-        newFilename: newfileName,
-      });
-    },
-    [createDuplicatePhotoVisitor]
-  );
-
-  const signInToNewOffice = useCallback(
-    async (visitorData: VisitorLog): Promise<any> => {
-      const formattedDate = parseAndFormatLogDate(visitorData.logDate);
-      const signInPayload = createSignInPayload(
-        visitorData,
-        VisitorDepartmentEntry?.officeId as number,
-        formattedDate
-      );
-
-      await duplicateVisitorPhoto(visitorData.strLogIn, signInPayload.logIn);
-
-      const response = await createVisitorLog(signInPayload).unwrap();
-      return response;
-    },
-    [VisitorDepartmentEntry?.officeId, duplicateVisitorPhoto, createVisitorLog]
-  );
-
-  const handleVisitorAlreadyLoggedOut = useCallback(async () => {
-    if (!visitorLogSignInDifferentOffice) return;
-
-    // Sign out from previous office
-    await signOutFromPreviousOffice(
-      visitorLogSignInDifferentOffice.strId,
-      visitorLogSignInDifferentOffice.strLogIn
-    );
-
-    // Sign in to new office
-    const response = await signInToNewOffice(visitorLogSignInDifferentOffice);
-
-    if (response.ghMessage) {
-      setShowModal(false);
-      resetForm();
-    }
-
-    handleDifferentOfficeVisitorLog(visitorLogSignInDifferentOffice);
-  }, [
-    visitorLogSignInDifferentOffice,
-    signOutFromPreviousOffice,
-    signInToNewOffice,
-    setShowModal,
-    resetForm,
-    handleDifferentOfficeVisitorLog,
-  ]);
-
-  const handleVisitorStillLoggedIn = useCallback(async () => {
-    if (!visitorDetailSignInDifferentOffice || !visitorLogSignInDifferentOffice)
-      return;
-
-    // Sign out from department
-    await signOutFromDepartment(
-      visitorDetailSignInDifferentOffice.strId,
-      visitorDetailSignInDifferentOffice.strDeptLogIn
-    );
-
-    // Sign out from previous office
-    await signOutFromPreviousOffice(
-      visitorDetailSignInDifferentOffice.strId,
-      visitorLogSignInDifferentOffice.strLogIn
-    );
-
-    // Sign in to new office
-    const response = await signInToNewOffice(visitorLogSignInDifferentOffice);
-
-    if (response.ghMessage) {
-      setShowModal(false);
-      resetForm();
-    }
-
-    handleDifferentOfficeVisitorLog(visitorLogSignInDifferentOffice);
-  }, [
-    visitorDetailSignInDifferentOffice,
-    visitorLogSignInDifferentOffice,
-    signOutFromDepartment,
-    signOutFromPreviousOffice,
-    signInToNewOffice,
-    setShowModal,
-    resetForm,
-    handleDifferentOfficeVisitorLog,
-  ]);
-
-  const handleDirectOfficeTransfer = useCallback(async () => {
-    if (!visitorLogSignInDifferentOffice) return;
-
-    // Direct sign out
-    const signOutPayloadDirect: IVisitorSignOutPayload = {
-      deptLogOut: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
-      sysDeptLogOut: true,
-    };
-
-    await signOutVisitor({
-      payload: signOutPayloadDirect,
-      dateTime: visitorLogSignInDifferentOffice.strLogIn,
-      strId: visitorLogSignInDifferentOffice.strId,
-    });
-
-    // Sign in to new office
-    const response = await signInToNewOffice(visitorLogSignInDifferentOffice);
-
-    if (response.ghMessage) {
-      setShowModal(false);
-      resetForm();
-    }
-
-    handleDifferentOfficeVisitorLog(visitorLogSignInDifferentOffice);
-  }, [
-    visitorLogSignInDifferentOffice,
-    signOutVisitor,
-    signInToNewOffice,
-    setShowModal,
-    resetForm,
-    handleDifferentOfficeVisitorLog,
-  ]);
-
-  // Refactored main callback - much cleaner!
-  const handleYesDifferentOffice = useCallback(async () => {
-    try {
-      if (visitorDetailSignInDifferentOffice) {
-        // Visitor has department log detail
-        if (visitorDetailSignInDifferentOffice.deptLogOut !== null) {
-          // Visitor is already logged out from department
-          await handleVisitorAlreadyLoggedOut();
-        } else {
-          // Visitor is still logged in at previous office department
-          await handleVisitorStillLoggedIn();
-        }
-      } else {
-        // Direct office-to-office transfer
-        await handleDirectOfficeTransfer();
-      }
-
-      // Re-enable camera after successful operation
-      setTimeout(() => {
-        setScanned(false);
-        setCameraEnabled(true);
-      }, 1000); // Small delay to ensure modal is closed first
-    } catch (error) {
-      console.log("Error handling different office visitor:", error);
-      showErrorToast("Failed to transfer visitor");
-    }
-  }, [
-    visitorDetailSignInDifferentOffice,
-    handleVisitorAlreadyLoggedOut,
-    handleVisitorStillLoggedIn,
-    handleDirectOfficeTransfer,
-    showErrorToast,
-  ]);
-
-  const handleCancelDifferentOffice = useCallback(() => {
-    setShowModal(false);
-  }, []);
-
-  const handleBarCodeScanned = useCallback(
-    async ({ data: scannedTicket }: BarcodeScanningResult) => {
-      try {
-        // Set scanned to true and disable camera immediately after scan
-        setScanned(true);
-        setCameraEnabled(false);
-
-        const { data: visitorLog } = await visitorLogInfo({
-          strId: scannedTicket,
-        });
-        const { data: visitorLogDetail } = await visitorLogInDetailInfo({
-          strId: scannedTicket,
-        });
-
-        if (!checkVisitorData(visitorLog)) {
-          // Re-enable camera if data validation fails
-          setCameraEnabled(true);
-          return;
-        }
-        if (checkVisitorLoggedOut(visitorLog)) {
-          // Re-enable camera if visitor is already logged out
-          setCameraEnabled(true);
-          return;
-        }
-
-        const sameOfficeVisitor =
-          visitorLog?.results[0].officeId ===
-          Number(VisitorDepartmentEntry?.officeId);
-        const visitorNotLoggedOut =
-          visitorLogDetail?.results?.length === 0 ||
-          visitorLogDetail?.results?.[0]?.deptLogOut !== null;
-
-        if (sameOfficeVisitor && visitorNotLoggedOut) {
-          // Visitor is same office and not logged out
-          await handleSameOfficeVisitor(visitorLog);
-          return;
-        }
-
-        const visitorISnotSameOfficeId =
-          visitorLog?.results[0].officeId !==
-          Number(VisitorDepartmentEntry?.officeId);
-        if (visitorISnotSameOfficeId) {
-          handleDifferentOfficeVisitor(visitorLog, visitorLogDetail);
-          return;
-        }
-
-        handleSignOutVisitor(visitorLogDetail);
-      } catch (error) {
-        console.log("Error checking ticket:", error);
-        Alert.alert("Error", "Failed to process ticket");
-        // Re-enable camera on error
-        setCameraEnabled(true);
-      }
-    },
-    [
-      checkVisitorData,
-      checkVisitorLoggedOut,
-      VisitorDepartmentEntry,
-      handleSameOfficeVisitor,
-      handleDifferentOfficeVisitor,
-      handleSignOutVisitor,
-      visitorLogInfo,
-      visitorLogInDetailInfo,
-    ]
-  );
-
-  // Reset scanner state
-  const resetScanner = useCallback(() => {
-    setScanned(false);
-    setCameraEnabled(true);
-  }, []);
+    // Handlers
+    handleQrCodeScanned,
+    handleChangePurpose,
+    handleCloseVisitorInformationCheckingModal,
+    handleSubmitVisitorLog,
+    handleSignOut,
+    handleYesDifferentOffice,
+    handleCancelDifferentOffice,
+    resetScanner,
+  } = useVisitorCamera();
 
   if (hasPermission === null) {
     return (
@@ -693,7 +104,7 @@ export default function VisitorCameraScreen() {
             <>
               {/* Only mount CameraView when cameraEnabled is true */}
               <CameraView
-                onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+                onBarcodeScanned={scanned ? undefined : handleQrCodeScanned}
                 barcodeScannerSettings={{
                   barcodeTypes: ['qr'],
                 }}
@@ -728,7 +139,7 @@ export default function VisitorCameraScreen() {
               <TouchableOpacity
                 onPress={() => {
                   setCameraEnabled(true);
-                  setScanned(false);
+                  resetScanner();
                 }}
                 className="mt-4 bg-blue-600 px-6 py-3 rounded-lg flex-row items-center"
               >
@@ -748,7 +159,7 @@ export default function VisitorCameraScreen() {
           handleCloseVisitorInformationCheckingModal();
           // Re-enable camera when modal is closed without submission
           setTimeout(() => {
-            setScanned(false);
+            resetScanner();
             setCameraEnabled(true);
           }, 500);
         }}
@@ -758,34 +169,21 @@ export default function VisitorCameraScreen() {
         purpose={purpose}
         handleChangePurpose={handleChangePurpose}
         onSubmitVisitorLog={handleSubmitVisitorLog}
-        isLoading={
-          isLoadingCreateVisitorLogDetail ||
-          isLoadingUpdateVisitorLog ||
-          isLoadingUpdateVisitorsLogDetail ||
-          isLoadingCreateVisitorLog ||
-          isLoadingCreateDuplicatePhotoVisitor
-        }
+        isLoading={isLoading}
       />
 
       <SignOutModal
         visible={showSignOutModal}
         onClose={() => {
-          setShowSignOutModal(false);
-          // Re-enable camera when modal is closed without sign out
+          handleCloseVisitorInformationCheckingModal();
           setTimeout(() => {
-            setScanned(false);
+            resetScanner();
             setCameraEnabled(true);
           }, 500);
         }}
-        onConfirm={() => {
-          handleSignOut();
-          // Camera will be re-enabled in handleSignOut after success
-        }}
+        onConfirm={handleSignOut}
         ticketId={currentVisitorLogInDetailSignOut?.strId || ''}
-        isLoading={
-          isLoadingUpdateVisitorsLogDetail ||
-          isLoadingSignOutVisitor
-        }
+        isLoading={isLoading}
       />
 
       {/* Confirmation Modal */}
@@ -795,7 +193,7 @@ export default function VisitorCameraScreen() {
           handleCancelDifferentOffice();
           // Re-enable camera when modal is closed without confirmation
           setTimeout(() => {
-            setScanned(false);
+            resetScanner();
             setCameraEnabled(true);
           }, 500);
         }}

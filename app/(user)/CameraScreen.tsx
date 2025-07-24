@@ -72,7 +72,8 @@ export default function CameraScreen() {
   }, [
     visitorManagement.showVisitorInformationCheckingModal,
     visitorManagement.showSignOutModal,
-    visitorManagement.showModal
+    visitorManagement.showModal,
+    qrScanner
   ]);
 
   // Disable camera when navigating away using Expo Router's focus state
@@ -86,7 +87,7 @@ export default function CameraScreen() {
     return () => {
       qrScanner.setCameraEnabled(false);
     };
-  }, [isFocused, isProcessingQR, isMounted]);
+  }, [isFocused, isProcessingQR, isMounted, qrScanner]);
 
   if (qrScanner.hasPermission === null) {
     return (
