@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { BarcodeScanningResult, CameraView } from 'expo-camera';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';

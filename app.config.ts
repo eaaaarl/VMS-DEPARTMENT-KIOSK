@@ -8,6 +8,7 @@ export default {
     scheme: "vmsdeparmentkiosk",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
+    jsEngine: "hermes",
     ios: {
       supportsTablet: true,
     },
@@ -18,6 +19,7 @@ export default {
       },
       edgeToEdgeEnabled: true,
       package: "com.eaaaarl.VMSDEPARMENTKIOSK",
+      jsEngine: "hermes",
     },
     web: {
       bundler: "metro",

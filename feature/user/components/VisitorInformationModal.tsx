@@ -1,7 +1,7 @@
 import { useGetLabelMessageQuery } from '@/feature/label/api/labelApi';
 import { VisitorLog } from '@/feature/visitor/api/inteface';
 import { useAppSelector } from '@/lib/redux/hooks';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import {
   ActivityIndicator,
