@@ -1,6 +1,7 @@
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks'
 import { DeviceType, LayoutModeType, setDeviceType, setLayoutMode, setOrientation } from '@/lib/redux/state/modeSlice'
-import { AntDesign, FontAwesome } from '@expo/vector-icons'
+import AntDesign from '@expo/vector-icons/AntDesign'
+import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { router } from 'expo-router'
 import React, { useEffect } from 'react'
 import { Dimensions, Platform, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native'

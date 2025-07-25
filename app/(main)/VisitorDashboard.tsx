@@ -5,7 +5,7 @@ import { QRScanButton } from '@/feature/main/components/QRScanButton';
 import { WelcomeHeader } from '@/feature/main/components/WelcomeHeader';
 import { useVisitorDashboard } from '@/feature/main/hooks/useVisitorDashboard';
 import { useAppSelector } from '@/lib/redux/hooks';
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';

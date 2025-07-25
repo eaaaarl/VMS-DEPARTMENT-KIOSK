@@ -3,7 +3,7 @@ import DepartmentSelector from '@/feature/user/components/DepartmentSelector';
 import QuickActions from '@/feature/user/components/QuickActions';
 import { useUserDashboard } from '@/feature/user/hooks/useUserDashboard';
 import { useAppSelector } from '@/lib/redux/hooks';
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
