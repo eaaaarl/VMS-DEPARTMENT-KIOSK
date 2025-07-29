@@ -1,7 +1,7 @@
 export default {
   expo: {
-    name: "VMS-DEPARMENT-KIOSK",
-    slug: "VMS-DEPARMENT-KIOSK",
+    name: "VMS Department Kiosk",
+    slug: "vms-department-kiosk",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
@@ -18,7 +18,7 @@ export default {
         backgroundColor: "#ffffff",
       },
       edgeToEdgeEnabled: true,
-      package: "com.eaaaarl.VMSDEPARMENTKIOSK",
+      package: "com.eaaaarl.vmsdepartmentkiosk",
       jsEngine: "hermes",
     },
     web: {
@@ -66,8 +66,9 @@ export default {
     },
     extra: {
       eas: {
-        projectId: "22188d03-e50b-48bc-93f5-91a24146c6a2",
+        projectId: "ea01c75a-be84-431f-b1a3-518e8a250cbe",
       },
     },
+    owner: "eaaaarl",
   },
 };
