@@ -1,0 +1,15 @@
+1. Department Kiosk, Visitor Sign Out can't cancel 
+2. persist layout of the screen
+3. switch button must have permission (Credential required)
+4. visitor information, Bold the font of the Time In
+5. change purpose to remarks and make it optional entry
+6. camera scan must optimize prevent double scan of qr code
+7. ID:xxxxxx is not registered to visit this office, do you want to accept this visit?
+8. add capture me button 
+9. Visitor information button enter change to Accept
+10. after accept redirect to dashboard
+11. add password if choose department
+
+
+feature (optional)
+1. add timer dashboard 
